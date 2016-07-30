@@ -170,7 +170,12 @@ int main(int argc, char *argv[])
     libusb_hotplug_callback_handle handle;
 
     if (geteuid() != 0) {
-        fprintf(stderr, "run app as root!\n");
+        fprintf(stderr, "Run app as root!\n");
+        return EXIT_FAILURE;
+    }
+
+    if (is_tun_present()) {
+        fprintf(stderr, "Tun dev is not present. Is kernel module loaded?\n");
         return EXIT_FAILURE;
     }
 

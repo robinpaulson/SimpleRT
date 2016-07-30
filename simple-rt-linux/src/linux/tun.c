@@ -2,13 +2,14 @@
 #include <linux/if.h>
 #include <linux/if_tun.h>
 #include <sys/ioctl.h>
+#include <unistd.h>
 #include "tun.h"
 
 static const char clonedev[] = "/dev/net/tun";
 
 bool is_tun_present(void)
 {
-    return true;
+    return access(clonedev, F_OK) == 0;
 }
 
 int tun_alloc(char *dev)
