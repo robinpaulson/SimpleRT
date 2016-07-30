@@ -6,41 +6,10 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
-
 #include <libusb.h>
+
 #include "linux-adk.h"
-
-/* tun headers */
-#include <netinet/ip.h>
-#include <linux/if.h>
-#include <linux/if_tun.h>
-#include <sys/ioctl.h>
-
-static int tun_alloc(char *dev)
-{
-    int fd;
-    int err;
-    struct ifreq ifr;
-
-    const char *clonedev = "/dev/net/tun";
-
-    if ((fd = open(clonedev, O_RDWR)) < 0 ) {
-        perror("error open tun");
-        return fd;
-    }
-
-    memset(&ifr, 0, sizeof(ifr));
-    ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
-
-    if ((err = ioctl(fd, TUNSETIFF, (void *) &ifr)) < 0) {
-        close(fd);
-        perror("error create tun");
-        return err;
-    }
-
-    strcpy(dev, ifr.ifr_name);
-    return fd;
-}
+#include "tun.h"
 
 #define ACC_BUF_SIZE 4096
 #define ACC_TIMEOUT 200

@@ -1,7 +1,7 @@
 TARGET = simple-rt
 LDFLAGS = -lm -lpthread
 CC = gcc
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -Iinclude
 
 CFLAGS += `pkg-config --cflags libusb-1.0`
 LDFLAGS += `pkg-config --libs libusb-1.0`
@@ -11,10 +11,14 @@ LDFLAGS += `pkg-config --libs libusb-1.0`
 default: $(TARGET)
 all: default
 
-OBJECTS = $(patsubst %.c, %.o, $(wildcard *.c))
-HEADERS = $(wildcard *.h)
+OBJ = obj
+SOURCES = src
+PLATFORM = $(SOURCES)/osx
+OBJECTS += $(patsubst %.c, $(OBJ)/%.o, $(wildcard $(SOURCES)/*.c $(PLATFORM)/*.c))
+HEADERS = $(wildcard include/*.h)
 
-%.o: %.c $(HEADERS)
+$(OBJ)/%.o: %.c $(HEADERS)
+	@mkdir -p `dirname $@`
 	$(CC) $(CFLAGS) -c $< -o $@
 
 .PRECIOUS: $(TARGET) $(OBJECTS)
@@ -23,5 +27,5 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(OBJECTS) -Wall $(LDFLAGS) -o $@
 
 clean:
-	-rm -f *.o
+	-rm -rf $(OBJ)
 	-rm -f $(TARGET)
