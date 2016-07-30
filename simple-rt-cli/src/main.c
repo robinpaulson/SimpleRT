@@ -24,7 +24,7 @@ static void *tun_thread_proc(void *param)
 
     while (acc->is_running) {
         nread = read(acc->tun_fd, acc_buf, sizeof(acc_buf));
-        if (nread) {
+        if (nread > 0) {
             ret = libusb_bulk_transfer(acc->handle,
                     AOA_ACCESSORY_EP_OUT, acc_buf, nread, &transferred, ACC_TIMEOUT);
             if (ret < 0) {
@@ -40,6 +40,7 @@ static void *tun_thread_proc(void *param)
             fprintf(stderr, "Error reading from tun: %s\n", strerror(errno));
             break;
         } else {
+            /* EOF received */
             break;
         }
     }
