@@ -11,10 +11,22 @@ LDFLAGS += `pkg-config --libs libusb-1.0`
 default: $(TARGET)
 all: default
 
+PLATFORM := none
+UNAME := $(shell uname -s)
+ifeq ($(UNAME),Linux)
+PLATFORM = linux
+endif
+ifeq ($(UNAME),Darwin)
+PLATFORM = osx
+endif
+ifeq ($(PLATFORM),none)
+$(error unknown platform $(UNAME))
+endif
+
 OBJ = obj
 SOURCES = src
-PLATFORM = $(SOURCES)/linux
-OBJECTS += $(patsubst %.c, $(OBJ)/%.o, $(wildcard $(SOURCES)/*.c $(PLATFORM)/*.c))
+PLATFORM_SRC = $(SOURCES)/$(PLATFORM)
+OBJECTS += $(patsubst %.c, $(OBJ)/%.o, $(wildcard $(SOURCES)/*.c $(PLATFORM_SRC)/*.c))
 HEADERS = $(wildcard include/*.h)
 
 $(OBJ)/%.o: %.c $(HEADERS)
