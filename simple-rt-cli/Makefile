@@ -13,7 +13,7 @@ all: default
 
 OBJ = obj
 SOURCES = src
-PLATFORM = $(SOURCES)/osx
+PLATFORM = $(SOURCES)/linux
 OBJECTS += $(patsubst %.c, $(OBJ)/%.o, $(wildcard $(SOURCES)/*.c $(PLATFORM)/*.c))
 HEADERS = $(wildcard include/*.h)
 
