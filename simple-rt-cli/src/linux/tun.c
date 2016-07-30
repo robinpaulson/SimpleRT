@@ -1,8 +1,11 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <netinet/ip.h>
 #include <linux/if.h>
 #include <linux/if_tun.h>
 #include <sys/ioctl.h>
-#include <unistd.h>
 #include "tun.h"
 
 static const char clonedev[] = "/dev/net/tun";
@@ -10,6 +13,18 @@ static const char clonedev[] = "/dev/net/tun";
 bool is_tun_present(void)
 {
     return access(clonedev, F_OK) == 0;
+}
+
+bool iface_up(const char *dev)
+{
+    char cmd[1024];
+
+    sprintf(cmd, "/bin/ip address add 10.10.10.1/30 dev %s\n", dev);
+    system(cmd);
+    sprintf(cmd, "/bin/ip link set up dev %s\n", dev);
+    system(cmd);
+
+    return true;
 }
 
 int tun_alloc(char *dev)

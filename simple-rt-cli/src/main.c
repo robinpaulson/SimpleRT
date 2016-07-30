@@ -97,11 +97,10 @@ static void *connection_thread_proc(void *param)
         return NULL;
     }
 
-    char cmd[1024];
-    sprintf(cmd, "/bin/ip address add 10.10.10.1/30 dev %s\n", tun_name);
-    system(cmd);
-    sprintf(cmd, "/bin/ip link set up dev %s\n", tun_name);
-    system(cmd);
+    if (!iface_up(tun_name)) {
+        fprintf(stderr, "Unable set iface %s up\n", tun_name);
+        return NULL;
+    }
 
     acc->tun_fd = tun_fd;
     acc->is_running = true;

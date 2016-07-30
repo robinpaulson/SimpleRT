@@ -9,5 +9,6 @@
 
 int tun_alloc(char *dev);
 bool is_tun_present(void);
+bool iface_up(const char *dev);
 
 #endif
