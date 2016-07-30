@@ -86,7 +86,7 @@ end:
 
 static void *connection_thread_proc(void *param)
 {
-	pthread_t tun_thread, accessory_thread;
+    pthread_t tun_thread, accessory_thread;
     accessory_t *acc = param;
 
     char tun_name[IFNAMSIZ] = { 0 };
@@ -105,8 +105,8 @@ static void *connection_thread_proc(void *param)
     acc->tun_fd = tun_fd;
     acc->is_running = true;
 
-	pthread_create(&tun_thread, NULL, tun_thread_proc, acc);
-	pthread_create(&accessory_thread, NULL, accessory_thread_proc, acc);
+    pthread_create(&tun_thread, NULL, tun_thread_proc, acc);
+    pthread_create(&accessory_thread, NULL, accessory_thread_proc, acc);
 
     pthread_join(tun_thread, NULL);
     pthread_join(accessory_thread, NULL);

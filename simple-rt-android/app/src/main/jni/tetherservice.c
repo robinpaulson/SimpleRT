@@ -24,7 +24,7 @@ static struct {
     pthread_t acc_thread;
     int tun_fd;
     int acc_fd;
-	volatile bool is_started;
+    volatile bool is_started;
 } module;
 
 enum ThreadType {
@@ -38,7 +38,7 @@ jint JNI_OnLoad(JavaVM *jvm, void *reserved)
 {
     LOGV(__func__);
 
-	module.is_started = false;
+    module.is_started = false;
     return JNI_VERSION_1_6;
 }
 
@@ -83,7 +83,7 @@ Java_com_viper_simplert_Native_start(JNIEnv *env, jclass type, jint tun_fd, jint
         return;
     }
 
-	module.is_started = true;
+    module.is_started = true;
     module.tun_fd = tun_fd;
     module.acc_fd = acc_fd;
 
@@ -102,9 +102,9 @@ Java_com_viper_simplert_Native_stop(JNIEnv *env, jclass type)
 {
     LOGV(__func__);
 
-	module.is_started = false;
+    module.is_started = false;
 
-	pthread_join(module.tun_thread, NULL);
+    pthread_join(module.tun_thread, NULL);
     pthread_join(module.acc_thread, NULL);
 }
 
