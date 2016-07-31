@@ -1,13 +1,17 @@
 # SimpleRT
-Reverse [Tethering](https://en.wikipedia.org/wiki/Tethering) for Android.
+Reverse [Tethering](https://en.wikipedia.org/wiki/Tethering) utility for Android.
 
 Allows you to share your computer's internet connection with your Android device via a USB cable.
 
+Development is still in progress, bugs and errors can occur.
+
 ### No root, no adb required!
 
-Linux & OSX supported! Windows - never mind (in the near future).
+Linux & OSX are supported! Windows is not, and unlikely to be in the future.
 
 - Android part:
+
+   Implemented as standalone service, no gui, no activities. Simplicity!
 
    Dependencies:
    - Android 4.0 and higher.
@@ -30,6 +34,8 @@ Create local.properties file in root dir, it should be looks like that:
    - libusb-1.0
    - tun/tap kernel module. osx version is [here](http://tuntaposx.sourceforge.net/).
 
+   ####FIrst of all, check out iface_up.sh and change LOCAL_INTERFACE, if you need.
+   
    Makefile is universal for both linux and osx, just type make.
    
 Usage:
@@ -37,7 +43,7 @@ Usage:
 - run console util as root
 - connect your android device
 
-First connection need acquire some trivial steps:
+First connection requires some trivial steps:
 
 ![First step]
 (https://github.com/vvviperrr/SimpleRT/blob/master/screens/accessory.png)
@@ -48,7 +54,7 @@ First connection need acquire some trivial steps:
 ![Third step]
 (https://github.com/vvviperrr/SimpleRT/blob/master/screens/connected.png)
 
-Issues: Some apps do not recognize the reverse tethered internet connection due to ConnectivityService policy. Just leave WiFi or 3g connection active.
+Issues: Some apps do not recognize the reverse tethered internet connection due to ConnectivityManager policy. Just leave WiFi or 3g connection active, connection will go through SimpleRT anyway.
 
 Partially used code from [linux-adk](https://github.com/gibsson/linux-adk).
 
