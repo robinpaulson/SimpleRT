@@ -27,6 +27,8 @@ Create local.properties file in root dir, it should be looks like that:
    ./gradlew assembleDebug
    ```
    app/build/outputs/apk/app-debug.apk is your apk.
+   
+   ####There is already built [apk](https://github.com/vvviperrr/SimpleRT/raw/master/simple_rt.apk)
 
 - Desktop part:
 
