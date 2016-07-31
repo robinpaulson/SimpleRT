@@ -3,7 +3,7 @@ Reverse [Tethering](https://en.wikipedia.org/wiki/Tethering) utility for Android
 
 Allows you to share your computer's internet connection with your Android device via a USB cable.
 
-Development still in progress, bugs and errors can occure.
+Development is still in progress, bugs and errors can occur.
 
 ### No root, no adb required!
 
@@ -43,7 +43,7 @@ Usage:
 - run console util as root
 - connect your android device
 
-First connection needs some trivial steps:
+First connection requires some trivial steps:
 
 ![First step]
 (https://github.com/vvviperrr/SimpleRT/blob/master/screens/accessory.png)
