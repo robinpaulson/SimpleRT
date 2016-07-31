@@ -7,7 +7,7 @@ Development still in progress, bugs and errors can occure.
 
 ### No root, no adb required!
 
-Linux & OSX supported! Windows - never mind (in the near future).
+Linux & OSX are supported! Windows is unlikely (in the near future).
 
 - Android part:
 
@@ -43,7 +43,7 @@ Usage:
 - run console util as root
 - connect your android device
 
-First connection need acquire some trivial steps:
+First connection needs some trivial steps:
 
 ![First step]
 (https://github.com/vvviperrr/SimpleRT/blob/master/screens/accessory.png)
@@ -54,7 +54,7 @@ First connection need acquire some trivial steps:
 ![Third step]
 (https://github.com/vvviperrr/SimpleRT/blob/master/screens/connected.png)
 
-Issues: Some apps do not recognize the reverse tethered internet connection due to ConnectivityService policy. Just leave WiFi or 3g connection active.
+Issues: Some apps do not recognize the reverse tethered internet connection due to ConnectivityManager policy. Just leave WiFi or 3g connection active, connection will go through SimpleRT anyway.
 
 Partially used code from [linux-adk](https://github.com/gibsson/linux-adk).
 
