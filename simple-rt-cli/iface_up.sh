@@ -19,6 +19,12 @@ if [ "$PLATFORM" = "linux" ]; then
     iptables -t nat -I POSTROUTING -s $TUNNEL_NET/$TUNNEL_CIDR -o $LOCAL_INTERFACE -j MASQUERADE
 elif [ "$PLATFORM" = "osx" ]; then
     ifconfig $TUN_DEV $HOST_ADDR $DEVICE_ADDR up
+    sysctl -w net.inet.ip.forwarding=1
+    sysctl -w net.inet.ip.fw.enable=1
+    echo "nat on en0 from $TUNNEL_NET/$TUNNEL_CIDR to any -> (en0)" > /tmp/nat_rules_rt
+    pfctl -d
+    pfctl -F all
+    pfctl -f /tmp/nat_rules_rt -e
 else
     exit 1
 fi

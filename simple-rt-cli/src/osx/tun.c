@@ -17,10 +17,8 @@ bool iface_up(const char *dev)
 {
     char cmd[1024];
 
-    sprintf(cmd, "ifconfig %s 10.10.10.1 10.10.10.2 up", dev);
-    system(cmd);
-
-    return true;
+    sprintf(cmd, "%s %s %s\n", IFACE_UP_SH_PATH, "osx", dev);
+    return system(cmd) == 0;
 }
 
 int tun_alloc(char *dev)

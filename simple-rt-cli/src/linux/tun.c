@@ -10,7 +10,6 @@
 #include "tun.h"
 
 static const char clonedev[] = "/dev/net/tun";
-static const char script_path[] = "./iface_up.sh";
 
 bool is_tun_present(void)
 {
@@ -21,7 +20,7 @@ bool iface_up(const char *dev)
 {
     char cmd[1024];
 
-    sprintf(cmd, "%s %s %s\n", script_path, "linux", dev);
+    sprintf(cmd, "%s %s %s\n", IFACE_UP_SH_PATH, "linux", dev);
     return system(cmd) == 0;
 }
 
