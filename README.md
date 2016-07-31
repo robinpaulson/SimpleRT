@@ -7,7 +7,7 @@ Development is still in progress, bugs and errors can occur.
 
 ### No root, no adb required!
 
-Linux & OSX are supported! Windows is unlikely (in the near future).
+Linux & OSX are supported! Windows is not, and unlikely to be in the future.
 
 - Android part:
 
