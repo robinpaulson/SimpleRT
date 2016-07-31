@@ -123,6 +123,13 @@ static void on_device_connected(struct libusb_context *ctx,
         const struct libusb_device_descriptor *desc,
         accessory_t *acc)
 {
+    static pthread_t conn_thread = 0;
+
+    if (conn_thread) {
+        pthread_join(conn_thread, NULL);
+        conn_thread = 0;
+    }
+
     acc->vid = desc->idVendor;
     acc->pid = desc->idProduct;
 
@@ -136,12 +143,7 @@ static void on_device_connected(struct libusb_context *ctx,
     }
 
     puts("accessory connected!");
-
-    pthread_t conn_thread;
-    pthread_attr_t attrs;
-    pthread_attr_init(&attrs);
-    pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
-    pthread_create(&conn_thread, &attrs, connection_thread_proc, acc);
+    pthread_create(&conn_thread, NULL, connection_thread_proc, acc);
 }
 
 int hotplug_callback(struct libusb_context *ctx,
