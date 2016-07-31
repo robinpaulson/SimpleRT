@@ -10,6 +10,7 @@
 #include "tun.h"
 
 static const char clonedev[] = "/dev/net/tun";
+static const char script_path[] = "./iface_up.sh";
 
 bool is_tun_present(void)
 {
@@ -20,12 +21,8 @@ bool iface_up(const char *dev)
 {
     char cmd[1024];
 
-    sprintf(cmd, "/bin/ip address add 10.10.10.1/30 dev %s\n", dev);
-    system(cmd);
-    sprintf(cmd, "/bin/ip link set up dev %s\n", dev);
-    system(cmd);
-
-    return true;
+    sprintf(cmd, "%s %s %s\n", script_path, "linux", dev);
+    return system(cmd) == 0;
 }
 
 int tun_alloc(char *dev)
