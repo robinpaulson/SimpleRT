@@ -37,6 +37,17 @@ Usage:
 - run console util as root
 - connect your android device
 
+First connection need acquire some trivial steps:
+
+![First step]
+(https://github.com/vvviperrr/SimpleRT/blob/master/screens/accessory.png)
+
+![Second step]
+(https://github.com/vvviperrr/SimpleRT/blob/master/screens/vpn.png)
+
+![Third step]
+(https://github.com/vvviperrr/SimpleRT/blob/master/screens/connected.png)
+
 Issues: Some apps do not recognize the reverse tethered internet connection due to ConnectivityService policy. Just leave WiFi or 3g connection active.
 
 Partially used code from [linux-adk](https://github.com/gibsson/linux-adk).
