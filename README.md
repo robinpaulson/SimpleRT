@@ -11,6 +11,8 @@ Linux & OSX supported! Windows - never mind (in the near future).
 
 - Android part:
 
+   Implemented as standalone service, no gui, no activities. Simplicity!
+
    Dependencies:
    - Android 4.0 and higher.
 
