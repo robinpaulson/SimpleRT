@@ -37,6 +37,7 @@
 
 /* Structures */
 typedef struct {
+    libusb_hotplug_callback_handle callback_handle;
     struct libusb_device_handle *handle;
     uint32_t aoa_version;
     uint16_t vid;

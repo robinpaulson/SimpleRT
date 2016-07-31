@@ -14,6 +14,9 @@
 #define ACC_BUF_SIZE 4096
 #define ACC_TIMEOUT 200
 
+static void register_callback(accessory_t *acc);
+static void deregister_callback(accessory_t *acc);
+
 static void *tun_thread_proc(void *param)
 {
     ssize_t nread;
@@ -115,21 +118,17 @@ static void *connection_thread_proc(void *param)
     close(acc->tun_fd);
     fini_accessory(acc);
 
+    register_callback(acc);
+
     return NULL;
 }
 
+/* !!!Don't block in this function!!! */
 static void on_device_connected(struct libusb_context *ctx,
         struct libusb_device *dev,
         const struct libusb_device_descriptor *desc,
         accessory_t *acc)
 {
-    static pthread_t conn_thread = 0;
-
-    if (conn_thread) {
-        pthread_join(conn_thread, NULL);
-        conn_thread = 0;
-    }
-
     acc->vid = desc->idVendor;
     acc->pid = desc->idProduct;
 
@@ -143,7 +142,14 @@ static void on_device_connected(struct libusb_context *ctx,
     }
 
     puts("accessory connected!");
-    pthread_create(&conn_thread, NULL, connection_thread_proc, acc);
+
+    pthread_t conn_thread;
+    pthread_attr_t attrs;
+    pthread_attr_init(&attrs);
+    pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
+    pthread_create(&conn_thread, &attrs, connection_thread_proc, acc);
+
+    deregister_callback(acc);
 }
 
 int hotplug_callback(struct libusb_context *ctx,
@@ -165,11 +171,35 @@ int hotplug_callback(struct libusb_context *ctx,
     return 0;
 }
 
-int main(int argc, char *argv[])
+static void register_callback(accessory_t *acc)
 {
     int rc;
+
+    rc = libusb_hotplug_register_callback(NULL, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, 0,
+            LIBUSB_HOTPLUG_MATCH_ANY, LIBUSB_HOTPLUG_MATCH_ANY, LIBUSB_HOTPLUG_MATCH_ANY,
+            hotplug_callback, acc, &acc->callback_handle);
+
+    if (rc != LIBUSB_SUCCESS) {
+        fprintf(stderr, "Error creating a hotplug callback\n");
+        libusb_exit(NULL);
+        exit(1);
+    }
+
+    puts("libusb callback registered!");
+}
+
+static void deregister_callback(accessory_t *acc)
+{
+    if (acc->callback_handle) {
+        libusb_hotplug_deregister_callback(NULL, acc->callback_handle);
+        acc->callback_handle = 0;
+        puts("libusb callback deregistered!");
+    }
+}
+
+int main(int argc, char *argv[])
+{
     accessory_t acc;
-    libusb_hotplug_callback_handle handle;
 
     if (geteuid() != 0) {
         fprintf(stderr, "Run app as root!\n");
@@ -182,26 +212,17 @@ int main(int argc, char *argv[])
     }
 
     libusb_init(NULL);
-    /* libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_DEBUG); */
 
     acc = new_accessory();
 
-    rc = libusb_hotplug_register_callback(NULL, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, 0,
-            LIBUSB_HOTPLUG_MATCH_ANY, LIBUSB_HOTPLUG_MATCH_ANY, LIBUSB_HOTPLUG_MATCH_ANY,
-            hotplug_callback, &acc, &handle);
-
-    if (rc != LIBUSB_SUCCESS) {
-        fprintf(stderr, "Error creating a hotplug callback\n");
-        libusb_exit(NULL);
-        return EXIT_FAILURE;
-    }
+    register_callback(&acc);
 
     while (true) {
         libusb_handle_events_completed(NULL, NULL);
         sleep(1);
     }
 
-    libusb_hotplug_deregister_callback(NULL, handle);
+    deregister_callback(&acc);
     libusb_exit(NULL);
 
     return EXIT_SUCCESS;
