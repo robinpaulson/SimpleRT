@@ -1,7 +1,9 @@
 # SimpleRT
-Reverse [Tethering](https://en.wikipedia.org/wiki/Tethering) for Android.
+Reverse [Tethering](https://en.wikipedia.org/wiki/Tethering) utility for Android.
 
 Allows you to share your computer's internet connection with your Android device via a USB cable.
+
+Development still in progress, bugs and errors can occure.
 
 ### No root, no adb required!
 
@@ -30,6 +32,8 @@ Create local.properties file in root dir, it should be looks like that:
    - libusb-1.0
    - tun/tap kernel module. osx version is [here](http://tuntaposx.sourceforge.net/).
 
+   ####FIrst of all, check out iface_up.sh and change LOCAL_INTERFACE, if you need.
+   
    Makefile is universal for both linux and osx, just type make.
    
 Usage:
