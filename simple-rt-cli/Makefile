@@ -17,7 +17,7 @@
 TARGET = simple-rt
 LDFLAGS = -lm -lpthread
 CC = gcc
-CFLAGS = -g -Wall -Iinclude
+CFLAGS = -g -std=c99 -D_BSD_SOURCE -Wall -Iinclude
 
 CFLAGS += `pkg-config --cflags libusb-1.0`
 LDFLAGS += `pkg-config --libs libusb-1.0`
