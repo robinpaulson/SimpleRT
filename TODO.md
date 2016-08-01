@@ -1,5 +1,6 @@
 - push app into f-droid
 - implement simple gui
+- push network config from desctop side, don't hardcode it into android service
 - make package for osx, debian
 - initialize accessory on utility starting, not on conencting device only
 - remove all puts/printfs into common log
