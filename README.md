@@ -11,8 +11,6 @@ Linux & OSX are supported! Windows is not, and unlikely to be in the future (ok,
 
 - Android part:
 
-   ####The project required fancy icon for android side badly. Anyone?
-
    Implemented as standalone service, no gui, no activities. Simplicity!
 
    Dependencies:
