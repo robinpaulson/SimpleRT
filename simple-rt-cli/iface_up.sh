@@ -25,6 +25,8 @@ TUNNEL_CIDR="30"
 HOST_ADDR="10.10.10.1"
 DEVICE_ADDR="10.10.10.2"
 
+echo configuring $TUN_DEV
+
 if [ "$PLATFORM" = "linux" ]; then
     #CHANGE, IF NEEDED
     LOCAL_INTERFACE="eth0"

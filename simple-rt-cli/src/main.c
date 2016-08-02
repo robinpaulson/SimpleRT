@@ -50,10 +50,10 @@ static void *tun_thread_proc(void *param)
                     AOA_ACCESSORY_EP_OUT, acc_buf, nread, &transferred, ACC_TIMEOUT);
             if (ret < 0) {
                 if (ret == LIBUSB_ERROR_TIMEOUT) {
-                    /* FIXME */
                     continue;
                 } else {
-                    fprintf(stderr, "bulk transfer error: %s\n", libusb_strerror(ret));
+                    fprintf(stderr, "Tun thread: bulk transfer error: %s\n",
+                            libusb_strerror(ret));
                     break;
                 }
             }
@@ -92,12 +92,13 @@ static void *accessory_thread_proc(void *param)
             if (ret == LIBUSB_ERROR_TIMEOUT) {
                 continue;
             } else {
-                fprintf(stderr, "bulk transfer error: %s\n", libusb_strerror(ret));
+                fprintf(stderr, "Acc thread: bulk transfer error: %s\n",
+                        libusb_strerror(ret));
                 break;
             }
+        } else {
+            write(acc->tun_fd, acc_buf, transferred);
         }
-
-        write(acc->tun_fd, acc_buf, transferred);
     }
 
 end:
@@ -122,6 +123,8 @@ static void *connection_thread_proc(void *param)
         fprintf(stderr, "Unable set iface %s up\n", tun_name);
         return NULL;
     }
+
+    fprintf(stdout, "%s interface configured!\n", tun_name);
 
     acc->tun_fd = tun_fd;
     acc->is_running = true;
