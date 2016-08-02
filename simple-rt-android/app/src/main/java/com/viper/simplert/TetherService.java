@@ -27,6 +27,7 @@ import android.hardware.usb.UsbManager;
 import android.net.VpnService;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
+import android.widget.Toast;
 
 public class TetherService extends VpnService {
     private static final String TAG = "TetherService";
@@ -63,7 +64,8 @@ public class TetherService extends VpnService {
         final UsbAccessory accessory = intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
 
         if (accessory == null) {
-            Log.e(TAG, "accessory is null");
+            showErrorDialog(getString(R.string.accessory_error));
+            stopSelf();
             return START_NOT_STICKY;
         }
 
@@ -75,16 +77,35 @@ public class TetherService extends VpnService {
 
         Builder builder = new Builder();
         builder.setMtu(1500);
-        builder.setSession("SimpleRT");
+        builder.setSession(getString(R.string.app_name));
         builder.addAddress("10.10.10.2", 30);
         builder.addRoute("0.0.0.0", 0);
         builder.addDnsServer("8.8.8.8");
 
         final ParcelFileDescriptor accessoryFd = ((UsbManager) getSystemService(Context.USB_SERVICE)).openAccessory(accessory);
-        final ParcelFileDescriptor tunFd = builder.establish();
+        if (accessoryFd == null) {
+            showErrorDialog(getString(R.string.accessory_error));
+            stopSelf();
+            return START_NOT_STICKY;
+        }
 
+        final ParcelFileDescriptor tunFd = builder.establish();
+        if (tunFd == null) {
+            showErrorDialog(getString(R.string.tun_error));
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+
+        Toast.makeText(this, "SimpleRT Connected!", Toast.LENGTH_SHORT).show();
         Native.start(tunFd.detachFd(), accessoryFd.detachFd());
 
         return START_NOT_STICKY;
+    }
+
+    private void showErrorDialog(String err) {
+        Intent activityIntent = new Intent(getApplicationContext(), InfoActivity.class);
+        activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        activityIntent.putExtra("text", err);
+        startActivity(activityIntent);
     }
 }

@@ -18,36 +18,41 @@
 
 package com.viper.simplert;
 
-import android.app.Activity;
 import android.content.Intent;
-import android.net.VpnService;
+import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
 
-public class StartAccessoryActivity extends Activity {
-    private static final String TAG = "StartAccessoryActivity";
+public class InfoActivity extends AppCompatActivity {
+
+    private TextView text_info;
+    private Button button_ok;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_info);
 
-        if (getIntent() != null) {
-            Intent intent = VpnService.prepare(this);
-            if (intent != null) {
-                startActivityForResult(intent, 0);
-            } else {
-                onActivityResult(0, RESULT_OK, null);
+        setFinishOnTouchOutside(false);
+
+        Intent intent = getIntent();
+
+        if (intent == null) {
+            finish();
+        }
+
+        text_info = (TextView) findViewById(R.id.text_info);
+        button_ok = (Button) findViewById(R.id.button_ok);
+
+        text_info.setText(intent.getStringExtra("text"));
+
+        button_ok.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
             }
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int request, int result, Intent data) {
-        super.onActivityResult(request, result, data);
-        if (request == 0 && result == RESULT_OK) {
-            Intent intent = new Intent(this, TetherService.class);
-            intent.fillIn(getIntent(), 0);
-            startService(intent);
-        }
-        finish();
+        });
     }
 }
