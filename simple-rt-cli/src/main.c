@@ -237,7 +237,10 @@ int main(int argc, char *argv[])
     if (argc > 1) {
         const char *param = argv[1];
 
-        if (strcmp(param, "-d") == 0) {
+        if (strcmp(param, "-h") == 0) {
+            puts("usage: sudo simple-rt [-h -d]");
+            return EXIT_SUCCESS;
+        } else if (strcmp(param, "-d") == 0) {
             puts("debug mode enabled");
             libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_DEBUG);
         } else {
