@@ -234,6 +234,18 @@ int main(int argc, char *argv[])
 
     libusb_init(NULL);
 
+    if (argc > 1) {
+        const char *param = argv[1];
+
+        if (strcmp(param, "-d") == 0) {
+            puts("debug mode enabled");
+            libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_DEBUG);
+        } else {
+            fprintf(stderr, "Unknown param: %s\n", param);
+            return EXIT_FAILURE;
+        }
+    }
+
     acc = new_accessory();
 
     register_callback(&acc);
