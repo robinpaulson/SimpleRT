@@ -95,7 +95,8 @@ int init_accessory(accessory_t *acc)
             AOA_GET_PROTOCOL, 0, 0, buffer,
             sizeof(buffer), 0);
     if (ret < 0) {
-        printf("Device is not support accessory!\n");
+        printf("Device %4.4x:%4.4x is not support accessory! Reason: %s\n",
+                acc->vid, acc->pid, libusb_strerror(ret));
         return ret;
     } else {
         acc->aoa_version = ((buffer[1] << 8) | buffer[0]);
