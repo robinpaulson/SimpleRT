@@ -88,6 +88,20 @@ int init_accessory(accessory_t *acc)
         return -1;
     }
 
+    /* Check whether a kernel driver is attached. If so, we'll need to detach it. */
+    if (libusb_kernel_driver_active(acc->handle, AOA_ACCESSORY_INTERFACE)) {
+        puts("Kernel driver is active!");
+        ret = libusb_detach_kernel_driver(acc->handle, AOA_ACCESSORY_INTERFACE);
+        if (ret == 0) {
+            puts("Kernel driver detached!");
+        } else {
+            fprintf(stderr, "Error detaching kernel driver: %s\n", libusb_strerror(ret));
+            return -1;
+        }
+    } else {
+        puts("Kernel driver is not active!");
+    }
+
     /* Now asking if device supports Android Open Accessory protocol */
     ret = libusb_control_transfer(acc->handle,
             LIBUSB_ENDPOINT_IN |
