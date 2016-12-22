@@ -20,7 +20,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include <libusb.h>
 #include "linux-adk.h"
 
 static const accessory_t acc_default = {

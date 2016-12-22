@@ -24,7 +24,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
-#include <libusb.h>
 
 #include "linux-adk.h"
 #include "tun.h"

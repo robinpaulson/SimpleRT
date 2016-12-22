@@ -20,6 +20,7 @@
 #define _LINUX_ADK_H_
 
 #include <stdint.h>
+#include <libusb.h>
 
 /* Android Open Accessory protocol defines */
 #define AOA_GET_PROTOCOL            51
