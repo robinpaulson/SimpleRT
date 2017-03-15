@@ -143,14 +143,12 @@ static void *connection_thread_proc(void *param)
     return NULL;
 }
 
-/* !!!Don't block in this function!!! */
-static void on_device_connected(struct libusb_context *ctx,
-        struct libusb_device *dev,
-        const struct libusb_device_descriptor *desc,
-        accessory_t *acc)
+static void *on_device_connected(void *param)
 {
-    acc->vid = desc->idVendor;
-    acc->pid = desc->idProduct;
+    accessory_t *acc = (accessory_t *) param;
+
+    /* FIXME: wait for hotplug_callback released */
+    sleep(1);
 
     if (!is_accessory_present(acc)) {
         if (init_accessory(acc) < 0) {
@@ -158,7 +156,7 @@ static void on_device_connected(struct libusb_context *ctx,
         } else {
             /* accessory init success, wait for present */
         }
-        return;
+        return NULL;
     }
 
     puts("accessory connected!");
@@ -170,9 +168,11 @@ static void on_device_connected(struct libusb_context *ctx,
     pthread_create(&conn_thread, &attrs, connection_thread_proc, acc);
 
     deregister_callback(acc);
+
+    return NULL;
 }
 
-int hotplug_callback(struct libusb_context *ctx,
+static int hotplug_callback(struct libusb_context *ctx,
         struct libusb_device *dev,
         libusb_hotplug_event event,
         void *user_data)
@@ -183,7 +183,14 @@ int hotplug_callback(struct libusb_context *ctx,
     libusb_get_device_descriptor(dev, &desc);
 
     if (event == LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED) {
-        on_device_connected(ctx, dev, &desc, acc);
+        acc->vid = desc.idVendor;
+        acc->pid = desc.idProduct;
+
+        pthread_t th;
+        pthread_attr_t attrs;
+        pthread_attr_init(&attrs);
+        pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
+        pthread_create(&th, &attrs, on_device_connected, acc);
     } else {
         fprintf(stderr, "Unknown libusb_hotplug_event: %d\n", event);
     }
