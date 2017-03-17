@@ -56,8 +56,6 @@
 
 /* Structures */
 typedef struct {
-    libusb_hotplug_callback_handle callback_handle;
-    struct libusb_device_handle *handle;
     uint32_t aoa_version;
     uint16_t vid;
     uint16_t pid;
@@ -67,13 +65,17 @@ typedef struct {
     char *version;
     char *url;
     char *serial;
+    /* FIXME: atomic needed */
     volatile int is_running;
     int tun_fd;
+    struct libusb_device_handle *handle;
 } accessory_t;
 
 int init_accessory(accessory_t *acc);
 void fini_accessory(accessory_t *acc);
 bool is_accessory_present(accessory_t *acc);
-accessory_t new_accessory(void);
+
+accessory_t *new_accessory(void);
+void free_accessory(accessory_t *acc);
 
 #endif /* _LINUX_ADK_H_ */

@@ -31,13 +31,10 @@
 #define ACC_BUF_SIZE 4096
 #define ACC_TIMEOUT 200
 
-static void register_callback(accessory_t *acc);
-static void deregister_callback(accessory_t *acc);
-
 static void *tun_thread_proc(void *param)
 {
-    ssize_t nread;
     int ret;
+    ssize_t nread;
     int transferred;
     uint8_t acc_buf[ACC_BUF_SIZE];
     accessory_t *acc = param;
@@ -73,6 +70,7 @@ static void *tun_thread_proc(void *param)
 static void *accessory_thread_proc(void *param)
 {
     int ret;
+    ssize_t nwrite;
     int transferred;
     uint8_t acc_buf[ACC_BUF_SIZE];
     accessory_t *acc = param;
@@ -96,7 +94,11 @@ static void *accessory_thread_proc(void *param)
                 break;
             }
         } else {
-            write(acc->tun_fd, acc_buf, transferred);
+            nwrite = write(acc->tun_fd, acc_buf, transferred);
+            if (nwrite < 0) {
+                fprintf(stderr, "Error writing into tun: %s\n", strerror(errno));
+                break;
+            }
         }
     }
 
@@ -109,46 +111,11 @@ static void *connection_thread_proc(void *param)
 {
     pthread_t tun_thread, accessory_thread;
     accessory_t *acc = param;
-
+    int tun_fd = 0;
     char tun_name[IFNAMSIZ] = { 0 };
-    int tun_fd = tun_alloc(tun_name);
-
-    if (tun_fd < 0) {
-        perror("tun_alloc failed");
-        return NULL;
-    }
-
-    if (!iface_up(tun_name)) {
-        fprintf(stderr, "Unable set iface %s up\n", tun_name);
-        return NULL;
-    }
-
-    fprintf(stdout, "%s interface configured!\n", tun_name);
-
-    acc->tun_fd = tun_fd;
-    acc->is_running = true;
-
-    pthread_create(&tun_thread, NULL, tun_thread_proc, acc);
-    pthread_create(&accessory_thread, NULL, accessory_thread_proc, acc);
-
-    pthread_join(tun_thread, NULL);
-    pthread_join(accessory_thread, NULL);
-
-    acc->is_running = false;
-    close(acc->tun_fd);
-    fini_accessory(acc);
-
-    register_callback(acc);
-
-    return NULL;
-}
-
-static void *on_device_connected(void *param)
-{
-    accessory_t *acc = (accessory_t *) param;
 
     /* FIXME: wait for hotplug_callback released */
-    sleep(1);
+    usleep(100);
 
     if (!is_accessory_present(acc)) {
         if (init_accessory(acc) < 0) {
@@ -161,13 +128,33 @@ static void *on_device_connected(void *param)
 
     puts("accessory connected!");
 
-    pthread_t conn_thread;
-    pthread_attr_t attrs;
-    pthread_attr_init(&attrs);
-    pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
-    pthread_create(&conn_thread, &attrs, connection_thread_proc, acc);
+    tun_fd = tun_alloc(tun_name);
 
-    deregister_callback(acc);
+    if (tun_fd < 0) {
+        perror("tun_alloc failed");
+        goto end;
+    }
+
+    if (!iface_up(tun_name)) {
+        fprintf(stderr, "Unable set iface %s up\n", tun_name);
+        goto end;
+    }
+
+    printf("%s interface configured!\n", tun_name);
+
+    acc->tun_fd = tun_fd;
+    acc->is_running = true;
+
+    pthread_create(&tun_thread, NULL, tun_thread_proc, acc);
+    pthread_create(&accessory_thread, NULL, accessory_thread_proc, acc);
+
+    pthread_join(tun_thread, NULL);
+    pthread_join(accessory_thread, NULL);
+
+end:
+    acc->is_running = false;
+    close(acc->tun_fd);
+    fini_accessory(acc);
 
     return NULL;
 }
@@ -180,6 +167,11 @@ static int hotplug_callback(struct libusb_context *ctx,
     struct libusb_device_descriptor desc;
     accessory_t *acc = user_data;
 
+    if (acc->is_running) {
+        /* one accessory already running */
+        return 0;
+    }
+
     libusb_get_device_descriptor(dev, &desc);
 
     if (event == LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED) {
@@ -190,43 +182,36 @@ static int hotplug_callback(struct libusb_context *ctx,
         pthread_attr_t attrs;
         pthread_attr_init(&attrs);
         pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
-        pthread_create(&th, &attrs, on_device_connected, acc);
+        pthread_create(&th, &attrs, connection_thread_proc, acc);
     } else {
         fprintf(stderr, "Unknown libusb_hotplug_event: %d\n", event);
     }
 
+    /* TODO: support device detached event */
+
     return 0;
-}
-
-static void register_callback(accessory_t *acc)
-{
-    int rc;
-
-    rc = libusb_hotplug_register_callback(NULL, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, 0,
-            LIBUSB_HOTPLUG_MATCH_ANY, LIBUSB_HOTPLUG_MATCH_ANY, LIBUSB_HOTPLUG_MATCH_ANY,
-            hotplug_callback, acc, &acc->callback_handle);
-
-    if (rc != LIBUSB_SUCCESS) {
-        fprintf(stderr, "Error creating a hotplug callback\n");
-        libusb_exit(NULL);
-        exit(1);
-    }
-
-    puts("libusb callback registered!");
-}
-
-static void deregister_callback(accessory_t *acc)
-{
-    if (acc->callback_handle) {
-        libusb_hotplug_deregister_callback(NULL, acc->callback_handle);
-        acc->callback_handle = 0;
-        puts("libusb callback deregistered!");
-    }
 }
 
 int main(int argc, char *argv[])
 {
-    accessory_t acc;
+    accessory_t *acc;
+    int rc = 0, debug_mode = 0;
+    libusb_hotplug_callback_handle callback_handle;
+
+    if (argc > 1) {
+        const char *param = argv[1];
+
+        if (strcmp(param, "-h") == 0) {
+            puts("usage: sudo simple-rt [-h -d]");
+            return EXIT_SUCCESS;
+        } else if (strcmp(param, "-d") == 0) {
+            puts("debug mode enabled");
+            debug_mode = 1;
+        } else {
+            fprintf(stderr, "Unknown param: %s\n", param);
+            return EXIT_FAILURE;
+        }
+    }
 
     if (geteuid() != 0) {
         fprintf(stderr, "Run app as root!\n");
@@ -240,31 +225,35 @@ int main(int argc, char *argv[])
 
     libusb_init(NULL);
 
-    if (argc > 1) {
-        const char *param = argv[1];
-
-        if (strcmp(param, "-h") == 0) {
-            puts("usage: sudo simple-rt [-h -d]");
-            return EXIT_SUCCESS;
-        } else if (strcmp(param, "-d") == 0) {
-            puts("debug mode enabled");
-            libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_DEBUG);
-        } else {
-            fprintf(stderr, "Unknown param: %s\n", param);
-            return EXIT_FAILURE;
-        }
+    if (debug_mode) {
+        libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_DEBUG);
     }
 
     acc = new_accessory();
 
-    register_callback(&acc);
+    rc = libusb_hotplug_register_callback(NULL, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, 0,
+            LIBUSB_HOTPLUG_MATCH_ANY, LIBUSB_HOTPLUG_MATCH_ANY, LIBUSB_HOTPLUG_MATCH_ANY,
+            hotplug_callback, acc, &callback_handle);
+
+    if (rc != LIBUSB_SUCCESS) {
+        fprintf(stderr, "Error creating a hotplug callback\n");
+        libusb_exit(NULL);
+        exit(1);
+    }
+
+    puts("libusb callback registered!");
 
     while (true) {
         libusb_handle_events_completed(NULL, NULL);
-        sleep(1);
+        usleep(1);
     }
 
-    deregister_callback(&acc);
+    if (callback_handle) {
+        libusb_hotplug_deregister_callback(NULL, callback_handle);
+        puts("libusb callback deregistered!");
+    }
+
+    free_accessory(acc);
     libusb_exit(NULL);
 
     return EXIT_SUCCESS;

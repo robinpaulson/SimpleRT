@@ -17,6 +17,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <unistd.h>
@@ -31,9 +32,16 @@ static const accessory_t acc_default = {
     .serial = "j3qq4-h7h2v-2hch4-m3hk8-6m8vw",
 };
 
-accessory_t new_accessory(void)
+accessory_t *new_accessory(void)
 {
-    return acc_default;
+    accessory_t *acc = malloc(sizeof(accessory_t));
+    memcpy(acc, &acc_default, sizeof(accessory_t));
+    return acc;
+}
+
+void free_accessory(accessory_t *acc)
+{
+    free(acc);
 }
 
 bool is_accessory_present(accessory_t *acc)
