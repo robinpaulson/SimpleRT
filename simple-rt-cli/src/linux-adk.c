@@ -29,7 +29,7 @@ static const accessory_t acc_default = {
     .description = "Simple Reverse Tethering",
     .version = "1.0",
     .url = "https://github.com/vvviperrr/SimpleRT",
-    .serial = "j3qq4-h7h2v-2hch4-m3hk8-6m8vw",
+    .serial = "10.1.1.2,8.8.8.8",
 };
 
 bool is_accessory_present(accessory_t *acc)
