@@ -72,7 +72,6 @@ typedef struct {
 } accessory_t;
 
 int init_accessory(accessory_t *acc);
-void fini_accessory(accessory_t *acc);
 bool is_accessory_present(accessory_t *acc);
 
 accessory_t *new_accessory(void);

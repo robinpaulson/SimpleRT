@@ -32,18 +32,6 @@ static const accessory_t acc_default = {
     .serial = "j3qq4-h7h2v-2hch4-m3hk8-6m8vw",
 };
 
-accessory_t *new_accessory(void)
-{
-    accessory_t *acc = malloc(sizeof(accessory_t));
-    *acc = acc_default;
-    return acc;
-}
-
-void free_accessory(accessory_t *acc)
-{
-    free(acc);
-}
-
 bool is_accessory_present(accessory_t *acc)
 {
     struct libusb_device_handle *handle;
@@ -213,17 +201,24 @@ error:
         }
     }
 
-    fini_accessory(acc);
-
     return ret < 0 ? -1 : 0;
 }
 
-void fini_accessory(accessory_t *acc)
+accessory_t *new_accessory(void)
+{
+    accessory_t *acc = malloc(sizeof(accessory_t));
+    *acc = acc_default;
+    return acc;
+}
+
+void free_accessory(accessory_t *acc)
 {
     if (acc->handle != NULL) {
         printf("Closing USB device\n");
         libusb_release_interface(acc->handle, 0);
         libusb_close(acc->handle);
-        acc->handle = NULL;
     }
+
+    free(acc);
 }
+

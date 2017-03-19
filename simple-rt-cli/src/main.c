@@ -120,7 +120,7 @@ static void *connection_thread_proc(void *param)
     /* init accessory from new connected device and wait for present */
     if (!is_accessory_present(acc)) {
         init_accessory(acc);
-        return NULL;
+        goto end;
     }
 
     puts("accessory connected!");
@@ -151,7 +151,7 @@ static void *connection_thread_proc(void *param)
 end:
     acc->is_running = false;
     close(acc->tun_fd);
-    fini_accessory(acc);
+    free_accessory(acc);
 
     return NULL;
 }
@@ -159,39 +159,33 @@ end:
 static int hotplug_callback(struct libusb_context *ctx,
         struct libusb_device *dev,
         libusb_hotplug_event event,
-        void *user_data)
+        void * arg)
 {
+    accessory_t *acc;
     struct libusb_device_descriptor desc;
-    accessory_t *acc = user_data;
 
-    if (acc->is_running) {
-        /* one accessory already running */
+    if (event != LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED) {
+        fprintf(stderr, "Unknown libusb_hotplug_event: %d\n", event);
         return 0;
     }
 
     libusb_get_device_descriptor(dev, &desc);
 
-    if (event == LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED) {
-        acc->vid = desc.idVendor;
-        acc->pid = desc.idProduct;
+    acc = new_accessory();
+    acc->vid = desc.idVendor;
+    acc->pid = desc.idProduct;
 
-        pthread_t th;
-        pthread_attr_t attrs;
-        pthread_attr_init(&attrs);
-        pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
-        pthread_create(&th, &attrs, connection_thread_proc, acc);
-    } else {
-        fprintf(stderr, "Unknown libusb_hotplug_event: %d\n", event);
-    }
-
-    /* TODO: support device detached event */
+    pthread_t th;
+    pthread_attr_t attrs;
+    pthread_attr_init(&attrs);
+    pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
+    pthread_create(&th, &attrs, connection_thread_proc, acc);
 
     return 0;
 }
 
 int main(int argc, char *argv[])
 {
-    accessory_t *acc;
     int rc = 0, debug_mode = 0;
     libusb_hotplug_callback_handle callback_handle;
 
@@ -226,11 +220,9 @@ int main(int argc, char *argv[])
         libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_DEBUG);
     }
 
-    acc = new_accessory();
-
     rc = libusb_hotplug_register_callback(NULL, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, 0,
             LIBUSB_HOTPLUG_MATCH_ANY, LIBUSB_HOTPLUG_MATCH_ANY, LIBUSB_HOTPLUG_MATCH_ANY,
-            hotplug_callback, acc, &callback_handle);
+            hotplug_callback, NULL, &callback_handle);
 
     if (rc != LIBUSB_SUCCESS) {
         fprintf(stderr, "Error creating a hotplug callback\n");
@@ -250,7 +242,6 @@ int main(int argc, char *argv[])
         puts("libusb callback deregistered!");
     }
 
-    free_accessory(acc);
     libusb_exit(NULL);
 
     return EXIT_SUCCESS;
