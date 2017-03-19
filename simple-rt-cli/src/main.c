@@ -117,12 +117,9 @@ static void *connection_thread_proc(void *param)
     /* FIXME: wait for hotplug_callback released */
     usleep(100);
 
+    /* init accessory from new connected device and wait for present */
     if (!is_accessory_present(acc)) {
-        if (init_accessory(acc) < 0) {
-            /* init failed, possibly usb device not support accessory, it's ok */
-        } else {
-            /* accessory init success, wait for present */
-        }
+        init_accessory(acc);
         return NULL;
     }
 

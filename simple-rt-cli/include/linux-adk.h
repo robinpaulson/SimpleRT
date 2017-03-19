@@ -56,15 +56,15 @@
 
 /* Structures */
 typedef struct {
-    uint32_t aoa_version;
+    const char *manufacturer;
+    const char *model;
+    const char *description;
+    const char *version;
+    const char *url;
+    const char *serial;
     uint16_t vid;
     uint16_t pid;
-    char *manufacturer;
-    char *model;
-    char *description;
-    char *version;
-    char *url;
-    char *serial;
+    uint16_t aoa_version;
     /* FIXME: atomic needed */
     volatile int is_running;
     int tun_fd;

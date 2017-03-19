@@ -35,7 +35,7 @@ static const accessory_t acc_default = {
 accessory_t *new_accessory(void)
 {
     accessory_t *acc = malloc(sizeof(accessory_t));
-    memcpy(acc, &acc_default, sizeof(accessory_t));
+    *acc = acc_default;
     return acc;
 }
 
@@ -80,8 +80,7 @@ bool is_accessory_present(accessory_t *acc)
 
 int init_accessory(accessory_t *acc)
 {
-    int ret;
-    uint8_t buffer[2];
+    int ret = 0, is_detached = 0;
 
     /* Check if device is not already in accessory mode */
     if (is_accessory_present(acc)) {
@@ -100,10 +99,11 @@ int init_accessory(accessory_t *acc)
         puts("Kernel driver is active!");
         ret = libusb_detach_kernel_driver(acc->handle, AOA_ACCESSORY_INTERFACE);
         if (ret == 0) {
+            is_detached = 1;
             puts("Kernel driver detached!");
         } else {
             fprintf(stderr, "Error detaching kernel driver: %s\n", libusb_strerror(ret));
-            return -1;
+            goto error;
         }
     } else {
         puts("Kernel driver is not active!");
@@ -111,18 +111,22 @@ int init_accessory(accessory_t *acc)
 
     /* Now asking if device supports Android Open Accessory protocol */
     ret = libusb_control_transfer(acc->handle,
-            LIBUSB_ENDPOINT_IN |
-            LIBUSB_REQUEST_TYPE_VENDOR,
-            AOA_GET_PROTOCOL, 0, 0, buffer,
-            sizeof(buffer), 0);
+            LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR,
+            AOA_GET_PROTOCOL, 0, 0,
+            (uint8_t *) &acc->aoa_version,
+            sizeof(acc->aoa_version), 0);
     if (ret < 0) {
         printf("Device %4.4x:%4.4x is not support accessory! Reason: %s\n",
                 acc->vid, acc->pid, libusb_strerror(ret));
-        return ret;
-    } else {
-        acc->aoa_version = ((buffer[1] << 8) | buffer[0]);
-        printf("Device supports AOA %d.0!\n", acc->aoa_version);
+        goto error;
     }
+
+    if (!acc->aoa_version) {
+        puts("Device is not support accessory");
+        goto error;
+    }
+
+    printf("Device supports AOA %d.0!\n", acc->aoa_version);
 
     /* Some Android devices require a waiting period between transfer calls */
     usleep(10000);
@@ -130,41 +134,34 @@ int init_accessory(accessory_t *acc)
     /* In case of a no_app accessory, the version must be >= 2 */
     if ((acc->aoa_version < 2) && !acc->manufacturer) {
         printf("Connecting without an Android App only for AOA 2.0\n");
-        return -1;
+        goto error;
     }
 
     printf("Sending identification to the device\n");
 
-    if (acc->manufacturer) {
-        printf(" sending manufacturer: %s\n", acc->manufacturer);
-        ret = libusb_control_transfer(acc->handle,
-                LIBUSB_ENDPOINT_OUT
-                | LIBUSB_REQUEST_TYPE_VENDOR,
-                AOA_SEND_IDENT, 0,
-                AOA_STRING_MAN_ID,
-                (uint8_t *) acc->manufacturer,
-                strlen(acc->manufacturer) + 1, 0);
-        if (ret < 0)
-            goto error;
-    }
+    printf(" sending manufacturer: %s\n", acc->manufacturer);
+    ret = libusb_control_transfer(acc->handle,
+            LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
+            AOA_SEND_IDENT, 0,
+            AOA_STRING_MAN_ID,
+            (uint8_t *) acc->manufacturer,
+            strlen(acc->manufacturer) + 1, 0);
+    if (ret < 0)
+        goto error;
 
-    if (acc->model) {
-        printf(" sending model: %s\n", acc->model);
-        ret = libusb_control_transfer(acc->handle,
-                LIBUSB_ENDPOINT_OUT
-                | LIBUSB_REQUEST_TYPE_VENDOR,
-                AOA_SEND_IDENT, 0,
-                AOA_STRING_MOD_ID,
-                (uint8_t *) acc->model,
-                strlen(acc->model) + 1, 0);
-        if (ret < 0)
-            goto error;
-    }
+    printf(" sending model: %s\n", acc->model);
+    ret = libusb_control_transfer(acc->handle,
+            LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
+            AOA_SEND_IDENT, 0,
+            AOA_STRING_MOD_ID,
+            (uint8_t *) acc->model,
+            strlen(acc->model) + 1, 0);
+    if (ret < 0)
+        goto error;
 
     printf(" sending description: %s\n", acc->description);
     ret = libusb_control_transfer(acc->handle,
-            LIBUSB_ENDPOINT_OUT |
-            LIBUSB_REQUEST_TYPE_VENDOR,
+            LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
             AOA_SEND_IDENT, 0, AOA_STRING_DSC_ID,
             (uint8_t *) acc->description,
             strlen(acc->description) + 1, 0);
@@ -173,8 +170,7 @@ int init_accessory(accessory_t *acc)
 
     printf(" sending version: %s\n", acc->version);
     ret = libusb_control_transfer(acc->handle,
-            LIBUSB_ENDPOINT_OUT |
-            LIBUSB_REQUEST_TYPE_VENDOR,
+            LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
             AOA_SEND_IDENT, 0, AOA_STRING_VER_ID,
             (uint8_t *) acc->version,
             strlen(acc->version) + 1, 0);
@@ -183,8 +179,7 @@ int init_accessory(accessory_t *acc)
 
     printf(" sending url: %s\n", acc->url);
     ret = libusb_control_transfer(acc->handle,
-            LIBUSB_ENDPOINT_OUT |
-            LIBUSB_REQUEST_TYPE_VENDOR,
+            LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
             AOA_SEND_IDENT, 0, AOA_STRING_URL_ID,
             (uint8_t *) acc->url,
             strlen(acc->url) + 1, 0);
@@ -193,8 +188,7 @@ int init_accessory(accessory_t *acc)
 
     printf(" sending serial number: %s\n", acc->serial);
     ret = libusb_control_transfer(acc->handle,
-            LIBUSB_ENDPOINT_OUT |
-            LIBUSB_REQUEST_TYPE_VENDOR,
+            LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
             AOA_SEND_IDENT, 0, AOA_STRING_SER_ID,
             (uint8_t *) acc->serial,
             strlen(acc->serial) + 1, 0);
@@ -208,25 +202,28 @@ int init_accessory(accessory_t *acc)
     if (ret < 0)
         goto error;
 
-    libusb_close(acc->handle);
-    acc->handle = NULL;
-
-    return 0;
+    puts("Accessory was inited");
 
 error:
-    printf("Accessory init failed: %d\n", ret);
-    return -1;
+    if (ret < 0) {
+        printf("Accessory init failed: %d\n", ret);
+
+        if (is_detached) {
+            libusb_attach_kernel_driver(acc->handle, AOA_ACCESSORY_INTERFACE);
+        }
+    }
+
+    fini_accessory(acc);
+
+    return ret < 0 ? -1 : 0;
 }
 
 void fini_accessory(accessory_t *acc)
 {
-    printf("Closing USB device\n");
-
     if (acc->handle != NULL) {
+        printf("Closing USB device\n");
         libusb_release_interface(acc->handle, 0);
         libusb_close(acc->handle);
         acc->handle = NULL;
     }
-
-    return;
 }
