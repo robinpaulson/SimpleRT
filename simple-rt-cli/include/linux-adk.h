@@ -21,6 +21,7 @@
 
 #include <stdint.h>
 #include <libusb.h>
+#include <stdbool.h>
 
 /* Android Open Accessory protocol defines */
 #define AOA_GET_PROTOCOL            51
@@ -54,6 +55,10 @@
 #define AOA_ACCESSORY_EP_OUT        0x02
 #define AOA_ACCESSORY_INTERFACE     0x00
 
+/* ACC params */
+#define ACC_BUF_SIZE 4096
+#define ACC_TIMEOUT 200
+
 /* Structures */
 typedef struct {
     const char *manufacturer;
@@ -67,7 +72,6 @@ typedef struct {
     uint16_t aoa_version;
     /* FIXME: atomic needed */
     volatile int is_running;
-    int tun_fd;
     struct libusb_device_handle *handle;
 } accessory_t;
 

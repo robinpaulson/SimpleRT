@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -27,53 +26,25 @@
 
 #include "linux-adk.h"
 #include "tun.h"
+#include "network.h"
 
-#define ACC_BUF_SIZE 4096
-#define ACC_TIMEOUT 200
-
-static void *tun_thread_proc(void *param)
+/* detached per-device working thread */
+static void *connection_thread_proc(void *param)
 {
-    int ret;
-    ssize_t nread;
-    int transferred;
-    uint8_t acc_buf[ACC_BUF_SIZE];
     accessory_t *acc = param;
+    int ret, transferred;
+    uint8_t acc_buf[ACC_BUF_SIZE];
 
-    while (acc->is_running) {
-        nread = read(acc->tun_fd, acc_buf, sizeof(acc_buf));
-        if (nread > 0) {
-            ret = libusb_bulk_transfer(acc->handle,
-                    AOA_ACCESSORY_EP_OUT, acc_buf, nread, &transferred, ACC_TIMEOUT);
-            if (ret < 0) {
-                if (ret == LIBUSB_ERROR_TIMEOUT) {
-                    continue;
-                } else {
-                    fprintf(stderr, "Tun thread: bulk transfer error: %s\n",
-                            libusb_strerror(ret));
-                    break;
-                }
-            }
-        } else if (nread < 0) {
-            fprintf(stderr, "Error reading from tun: %s\n", strerror(errno));
-            break;
-        } else {
-            /* EOF received */
-            break;
-        }
+    /* FIXME: wait for hotplug_callback released */
+    usleep(100);
+
+    /* init accessory from new connected device and wait for present */
+    if (!is_accessory_present(acc)) {
+        init_accessory(acc);
+        goto end;
     }
 
-    acc->is_running = false;
-
-    return NULL;
-}
-
-static void *accessory_thread_proc(void *param)
-{
-    int ret;
-    ssize_t nwrite;
-    int transferred;
-    uint8_t acc_buf[ACC_BUF_SIZE];
-    accessory_t *acc = param;
+    puts("accessory connected!");
 
     /* Claiming first (accessory) interface from the opened device */
     ret = libusb_claim_interface(acc->handle, AOA_ACCESSORY_INTERFACE);
@@ -81,6 +52,8 @@ static void *accessory_thread_proc(void *param)
         fprintf(stderr, "Error claiming interface: %s\n", libusb_strerror(ret));
         goto end;
     }
+
+    acc->is_running = true;
 
     while (acc->is_running) {
         ret = libusb_bulk_transfer(acc->handle, AOA_ACCESSORY_EP_IN,
@@ -94,9 +67,7 @@ static void *accessory_thread_proc(void *param)
                 break;
             }
         } else {
-            nwrite = write(acc->tun_fd, acc_buf, transferred);
-            if (nwrite < 0) {
-                fprintf(stderr, "Error writing into tun: %s\n", strerror(errno));
+            if (send_network(acc_buf, transferred) < 0) {
                 break;
             }
         }
@@ -104,55 +75,7 @@ static void *accessory_thread_proc(void *param)
 
 end:
     acc->is_running = false;
-    return NULL;
-}
-
-static void *connection_thread_proc(void *param)
-{
-    pthread_t tun_thread, accessory_thread;
-    accessory_t *acc = param;
-    int tun_fd = 0;
-    char tun_name[IFNAMSIZ] = { 0 };
-
-    /* FIXME: wait for hotplug_callback released */
-    usleep(100);
-
-    /* init accessory from new connected device and wait for present */
-    if (!is_accessory_present(acc)) {
-        init_accessory(acc);
-        goto end;
-    }
-
-    puts("accessory connected!");
-
-    tun_fd = tun_alloc(tun_name);
-
-    if (tun_fd < 0) {
-        perror("tun_alloc failed");
-        goto end;
-    }
-
-    if (!iface_up(tun_name)) {
-        fprintf(stderr, "Unable set iface %s up\n", tun_name);
-        goto end;
-    }
-
-    printf("%s interface configured!\n", tun_name);
-
-    acc->tun_fd = tun_fd;
-    acc->is_running = true;
-
-    pthread_create(&tun_thread, NULL, tun_thread_proc, acc);
-    pthread_create(&accessory_thread, NULL, accessory_thread_proc, acc);
-
-    pthread_join(tun_thread, NULL);
-    pthread_join(accessory_thread, NULL);
-
-end:
-    acc->is_running = false;
-    close(acc->tun_fd);
     free_accessory(acc);
-
     return NULL;
 }
 
@@ -211,6 +134,11 @@ int main(int argc, char *argv[])
 
     if (!is_tun_present()) {
         fprintf(stderr, "Tun dev is not present. Is kernel module loaded?\n");
+        return EXIT_FAILURE;
+    }
+
+    if (!start_network()) {
+        fprintf(stderr, "Unable to start network!\n");
         return EXIT_FAILURE;
     }
 
