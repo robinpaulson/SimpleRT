@@ -24,6 +24,6 @@
 
 bool start_network(void);
 void stop_network(void);
-int send_network(void *data, size_t count);
+int send_network_packet(void *data, size_t size);
 
 #endif

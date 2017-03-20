@@ -21,18 +21,16 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <pthread.h>
 
 #include "linux-adk.h"
-#include "tun.h"
 #include "network.h"
 
 /* detached per-device working thread */
 static void *connection_thread_proc(void *param)
 {
     accessory_t *acc = param;
-    int ret, transferred;
+    int ret = 0, transferred = 0;
     uint8_t acc_buf[ACC_BUF_SIZE];
 
     /* FIXME: wait for hotplug_callback released */
@@ -67,7 +65,8 @@ static void *connection_thread_proc(void *param)
                 break;
             }
         } else {
-            if (send_network(acc_buf, transferred) < 0) {
+            if (send_network_packet(acc_buf, transferred) < 0) {
+                fprintf(stderr, "Send network packet faield!\n");
                 break;
             }
         }
@@ -109,18 +108,20 @@ static int hotplug_callback(struct libusb_context *ctx,
 
 int main(int argc, char *argv[])
 {
-    int rc = 0, debug_mode = 0;
+    int rc = 0;
     libusb_hotplug_callback_handle callback_handle;
+
+    libusb_init(NULL);
 
     if (argc > 1) {
         const char *param = argv[1];
 
-        if (strcmp(param, "-h") == 0) {
+        if (strcmp(param, "-d") == 0) {
+            puts("debug mode enabled");
+            libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_DEBUG);
+        } else if (strcmp(param, "-h") == 0) {
             puts("usage: sudo simple-rt [-h -d]");
             return EXIT_SUCCESS;
-        } else if (strcmp(param, "-d") == 0) {
-            puts("debug mode enabled");
-            debug_mode = 1;
         } else {
             fprintf(stderr, "Unknown param: %s\n", param);
             return EXIT_FAILURE;
@@ -132,20 +133,9 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (!is_tun_present()) {
-        fprintf(stderr, "Tun dev is not present. Is kernel module loaded?\n");
-        return EXIT_FAILURE;
-    }
-
     if (!start_network()) {
         fprintf(stderr, "Unable to start network!\n");
         return EXIT_FAILURE;
-    }
-
-    libusb_init(NULL);
-
-    if (debug_mode) {
-        libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_DEBUG);
     }
 
     rc = libusb_hotplug_register_callback(NULL, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, 0,
@@ -154,22 +144,18 @@ int main(int argc, char *argv[])
 
     if (rc != LIBUSB_SUCCESS) {
         fprintf(stderr, "Error creating a hotplug callback\n");
-        libusb_exit(NULL);
-        exit(1);
+        return EXIT_FAILURE;
     }
 
-    puts("libusb callback registered!");
+    puts("SimpleRT started!");
 
     while (true) {
         libusb_handle_events_completed(NULL, NULL);
         usleep(1);
     }
 
-    if (callback_handle) {
-        libusb_hotplug_deregister_callback(NULL, callback_handle);
-        puts("libusb callback deregistered!");
-    }
-
+    stop_network();
+    libusb_hotplug_deregister_callback(NULL, callback_handle);
     libusb_exit(NULL);
 
     return EXIT_SUCCESS;
