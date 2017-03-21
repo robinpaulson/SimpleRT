@@ -66,14 +66,19 @@ typedef struct {
     const char *description;
     const char *version;
     const char *url;
-    const char *serial;
+
+    size_t id;
     uint16_t vid;
     uint16_t pid;
     uint16_t aoa_version;
+
     /* FIXME: atomic needed */
     volatile int is_running;
     struct libusb_device *device;
     struct libusb_device_handle *handle;
+
+    /*FIXME: using as accessory params */
+    char serial[128];
 } accessory_t;
 
 int init_accessory(accessory_t *acc);
@@ -81,5 +86,7 @@ bool is_accessory_present(accessory_t *acc);
 
 accessory_t *new_accessory(struct libusb_device *dev);
 void free_accessory(accessory_t *acc);
+
+accessory_t *find_accessory_by_id(size_t id);
 
 #endif /* _LINUX_ADK_H_ */

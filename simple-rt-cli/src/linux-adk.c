@@ -23,14 +23,28 @@
 #include <unistd.h>
 #include "linux-adk.h"
 
+#define ARRAY_SIZE(x) (sizeof((x)) / sizeof((x)[0]))
+
 static const accessory_t acc_default = {
     .manufacturer = "Konstantin Menyaev",
     .model = "SimpleRT",
     .description = "Simple Reverse Tethering",
     .version = "1.0",
     .url = "https://github.com/vvviperrr/SimpleRT",
-    .serial = "10.1.1.2,8.8.8.8",
 };
+
+static accessory_t acc_resolved = {
+    .is_running = 1,
+};
+
+/* acc list for 255.255.255.0 network mask */
+static accessory_t *acc_list[256] = {
+    [0] = &acc_resolved,    /* resolved, network addr */
+    [1] = &acc_resolved,    /* resolved, host addr */
+    [255] = &acc_resolved,  /* resolved, broadcast addr */
+};
+
+static size_t g_last_acc_id_allocated = 0;
 
 /* check, is arrived device is accessory */
 bool is_accessory_present(accessory_t *acc)
@@ -45,7 +59,7 @@ bool is_accessory_present(accessory_t *acc)
     };
 
     /* Trying to open all the AOA IDs possible */
-    for (size_t i = 0; i < sizeof(aoa_pids) / sizeof(aoa_pids[0]); i++) {
+    for (size_t i = 0; i < ARRAY_SIZE(aoa_pids); i++) {
         uint16_t vid = AOA_ACCESSORY_VID;
         uint16_t pid = aoa_pids[i];
 
@@ -53,6 +67,7 @@ bool is_accessory_present(accessory_t *acc)
             int ret = libusb_open(acc->device, &acc->handle);
             if (ret == 0) {
                 printf("Found accessory %4.4x:%4.4x\n", vid, pid);
+                g_last_acc_id_allocated = 0;
                 return true;
             } else {
                 fprintf(stderr, "Error opening accessory device: %s\n", libusb_strerror(ret));
@@ -204,27 +219,68 @@ error:
     return ret < 0 ? -1 : 0;
 }
 
+static size_t find_free_accessory_id(void)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(acc_list); i++) {
+        if (acc_list[i] == NULL) {
+            /* free id found */
+            return i;
+        }
+    }
+
+    return 0;
+}
+
+accessory_t *find_accessory_by_id(size_t id)
+{
+    if (id >= ARRAY_SIZE(acc_list)) {
+        return NULL;
+    }
+
+    return acc_list[id];
+}
+
+/* FIXME: mutex */
 accessory_t *new_accessory(struct libusb_device *dev)
 {
-    accessory_t *acc;
+    accessory_t *acc = NULL;
     struct libusb_device_descriptor desc;
 
     libusb_get_device_descriptor(dev, &desc);
 
     acc = malloc(sizeof(accessory_t));
     *acc = acc_default;
-
     acc->vid = desc.idVendor;
     acc->pid = desc.idProduct;
     acc->device = libusb_ref_device(dev);
 
+    /* FIXME: REALLY bad impl of serial->id mapping */
+    if (g_last_acc_id_allocated) {
+        acc->id = g_last_acc_id_allocated;
+        acc_list[acc->id] = acc;
+        g_last_acc_id_allocated = 0;
+    } else {
+        if ((g_last_acc_id_allocated = find_free_accessory_id()) == 0) {
+            fprintf(stderr, "No free accessory id's left\n");
+            free(acc);
+            return NULL;
+        } else {
+            sprintf(acc->serial, "10.1.1.%zu,%s", g_last_acc_id_allocated, "8.8.8.8");
+        }
+    }
+
     return acc;
 }
 
+/* FIXME: mutex */
 void free_accessory(accessory_t *acc)
 {
     if (!acc) {
         return;
+    }
+
+    if (acc->id) {
+        acc_list[acc->id] = NULL;
     }
 
     if (acc->device) {

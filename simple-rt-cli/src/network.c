@@ -52,6 +52,7 @@ static inline void dump_addr_info(uint32_t addr, ssize_t size)
 static inline void process_network_packet(uint8_t *data, ssize_t size)
 {
     uint32_t dst_addr;
+    accessory_t *acc;
 
     /* only ipv4 supported */
     if (size < 20 || ((*data >> 4) & 0xf) != 4) {
@@ -66,11 +67,16 @@ static inline void process_network_packet(uint8_t *data, ssize_t size)
         (uint32_t) (data[19] << 0);
 
     if (NETWORK_ADDRESS(dst_addr) == TUN_NETWORK_ADDRESS) {
-        dump_addr_info(dst_addr, size);
+        /* dump_addr_info(dst_addr, size); */
 
-        /* int transferred; */
-        /* libusb_bulk_transfer(acc_global_handle, */
-        /*         AOA_ACCESSORY_EP_OUT, data, size, &transferred, ACC_TIMEOUT); */
+        if ((acc = find_accessory_by_id(dst_addr & 0xff)) != NULL) {
+            /* FIXME: error handling */
+            int transferred;
+            libusb_bulk_transfer(acc->handle,
+                    AOA_ACCESSORY_EP_OUT, data, size, &transferred, ACC_TIMEOUT);
+        } else {
+            /* accessory removed? */
+        }
     }
 }
 

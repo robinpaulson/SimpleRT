@@ -83,12 +83,17 @@ static int hotplug_callback(struct libusb_context *ctx,
         libusb_hotplug_event event,
         void * arg)
 {
+    accessory_t *acc;
+
     if (event != LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED) {
         fprintf(stderr, "Unknown libusb_hotplug_event: %d\n", event);
         return 0;
     }
 
-    accessory_t * acc = new_accessory(dev);
+    if ((acc = new_accessory(dev)) == NULL) {
+        fprintf(stderr, "Cannot create new accessory!\n");
+        return 0;
+    }
 
     pthread_t th;
     pthread_attr_t attrs;
