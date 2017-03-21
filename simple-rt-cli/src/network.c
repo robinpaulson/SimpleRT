@@ -41,7 +41,11 @@
 #define SIMPLERT_NETWORK_ADDRESS \
     SIMPLERT_NETWORK_ADDRESS_BUILDER(10,1,1,0)
 
-#define NETWORK_ADDRESS(addr) ((addr) & 0xffffff00)
+#define NETWORK_ADDRESS(addr) \
+    ((addr) & 0xffffff00)
+
+#define ACC_ID_FROM_ADDR(addr) \
+    ((addr) & 0xff)
 
 #define DNS_ADDRESS "8.8.8.8"
 
@@ -65,7 +69,6 @@ static inline void dump_addr_info(uint32_t addr, ssize_t size)
 static inline void process_network_packet(uint8_t *data, ssize_t size)
 {
     uint32_t dst_addr;
-    accessory_t *acc;
 
     /* only ipv4 supported */
     if (size < 20 || ((*data >> 4) & 0xf) != 4) {
@@ -81,15 +84,7 @@ static inline void process_network_packet(uint8_t *data, ssize_t size)
 
     if (NETWORK_ADDRESS(dst_addr) == SIMPLERT_NETWORK_ADDRESS) {
         /* dump_addr_info(dst_addr, size); */
-
-        if ((acc = find_accessory_by_id(dst_addr & 0xff)) != NULL) {
-            /* FIXME: error handling */
-            int transferred;
-            libusb_bulk_transfer(acc->handle,
-                    AOA_ACCESSORY_EP_OUT, data, size, &transferred, ACC_TIMEOUT);
-        } else {
-            /* accessory removed? */
-        }
+        send_accessory_packet(data, size, ACC_ID_FROM_ADDR(dst_addr));
     }
 }
 

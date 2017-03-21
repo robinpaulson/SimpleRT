@@ -20,63 +20,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <errno.h>
-#include <pthread.h>
 
 #include "linux-adk.h"
 #include "network.h"
-
-/* detached per-device working thread */
-static void *connection_thread_proc(void *param)
-{
-    accessory_t *acc = param;
-    int ret = 0, transferred = 0;
-    uint8_t acc_buf[ACC_BUF_SIZE];
-
-    /* FIXME: wait for hotplug_callback released */
-    usleep(100);
-
-    /* init accessory from new connected device and wait for present */
-    if (!is_accessory_present(acc)) {
-        init_accessory(acc);
-        goto end;
-    }
-
-    puts("accessory connected!");
-
-    /* Claiming first (accessory) interface from the opened device */
-    ret = libusb_claim_interface(acc->handle, AOA_ACCESSORY_INTERFACE);
-    if (ret != 0) {
-        fprintf(stderr, "Error claiming interface: %s\n", libusb_strerror(ret));
-        goto end;
-    }
-
-    acc->is_running = true;
-
-    while (acc->is_running) {
-        ret = libusb_bulk_transfer(acc->handle, AOA_ACCESSORY_EP_IN,
-                acc_buf, sizeof(acc_buf), &transferred, ACC_TIMEOUT);
-        if (ret < 0) {
-            if (ret == LIBUSB_ERROR_TIMEOUT) {
-                continue;
-            } else {
-                fprintf(stderr, "Acc thread: bulk transfer error: %s\n",
-                        libusb_strerror(ret));
-                break;
-            }
-        } else {
-            if (send_network_packet(acc_buf, transferred) < 0) {
-                fprintf(stderr, "Send network packet faield!\n");
-                break;
-            }
-        }
-    }
-
-end:
-    acc->is_running = false;
-    free_accessory(acc);
-    return NULL;
-}
 
 static int hotplug_callback(struct libusb_context *ctx,
         struct libusb_device *dev,
@@ -95,12 +41,7 @@ static int hotplug_callback(struct libusb_context *ctx,
         return 0;
     }
 
-    pthread_t th;
-    pthread_attr_t attrs;
-    pthread_attr_init(&attrs);
-    pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
-    pthread_create(&th, &attrs, connection_thread_proc, acc);
-
+    run_accessory_detached(acc);
     return 0;
 }
 
