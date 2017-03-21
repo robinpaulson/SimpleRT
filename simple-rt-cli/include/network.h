@@ -25,7 +25,7 @@
 #define DEFAULT_NAMESERVER "8.8.8.8"
 
 typedef struct {
-    char *nameserver;
+    const char *nameserver;
 } network_config_t;
 
 bool start_network(const network_config_t *config);

@@ -56,6 +56,7 @@ int main(int argc, char *argv[])
 
     libusb_init(NULL);
 
+    /* FIXME */
     if (argc > 1) {
         const char *param = argv[1];
 

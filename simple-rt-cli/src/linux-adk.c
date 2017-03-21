@@ -71,7 +71,7 @@ typedef struct accessory_t {
     const char *version;
     const char *url;
 
-    size_t id;
+    uint32_t id;
     uint16_t vid;
     uint16_t pid;
     uint16_t aoa_version;
@@ -104,11 +104,11 @@ static accessory_t *acc_list[256] = {
     [255]   = &acc_reserved,    /* reserved, broadcast addr */
 };
 
-static size_t g_last_acc_id_allocated = 0;
+static uint32_t g_last_acc_id_allocated = 0;
 
-static size_t find_free_accessory_id(void)
+static uint32_t find_free_accessory_id(void)
 {
-    for (size_t i = 0; i < ARRAY_SIZE(acc_list); i++) {
+    for (uint32_t i = 0; i < ARRAY_SIZE(acc_list); i++) {
         if (acc_list[i] == NULL) {
             /* free id found */
             return i;
