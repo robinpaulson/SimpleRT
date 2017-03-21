@@ -34,14 +34,6 @@ bool is_tun_present(void)
     return access(clonedev, F_OK) == 0;
 }
 
-bool iface_up(const char *dev)
-{
-    char cmd[1024];
-
-    sprintf(cmd, "%s %s %s\n", IFACE_UP_SH_PATH, "linux", dev);
-    return system(cmd) == 0;
-}
-
 int tun_alloc(char *dev)
 {
     int fd;

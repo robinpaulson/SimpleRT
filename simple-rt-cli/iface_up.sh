@@ -18,19 +18,21 @@
 #params from simple-rt-cli
 PLATFORM=$1
 TUN_DEV=$2
-
-TUNNEL_NET="10.1.1.0"
-TUNNEL_CIDR="24"
-HOST_ADDR="10.1.1.1"
+TUNNEL_NET=$3
+HOST_ADDR=$4
+TUNNEL_CIDR=$5
 
 echo configuring $TUN_DEV
+echo    network: $TUNNEL_NET
+echo    address: $HOST_ADDR
+echo    netmask: $TUNNEL_CIDR
 
 if [ "$PLATFORM" = "linux" ]; then
     #CHANGE, IF NEEDED
     LOCAL_INTERFACE="eth0"
 
     ifconfig $TUN_DEV $HOST_ADDR/$TUNNEL_CIDR up
-    sysctl -w net.ipv4.ip_forward=1
+    sysctl -w net.ipv4.ip_forward=1 > /dev/null
     iptables -I FORWARD -j ACCEPT
     iptables -t nat -I POSTROUTING -s $TUNNEL_NET/$TUNNEL_CIDR -o $LOCAL_INTERFACE -j MASQUERADE
 else

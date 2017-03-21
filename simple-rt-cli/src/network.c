@@ -17,6 +17,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
@@ -31,15 +32,21 @@ static int g_tun_fd = 0;
 static pthread_t g_tun_thread = 0;
 static volatile int g_tun_is_running = 0;
 
-#define TUN_NET_ADDR_HELPER(a,b,c) (    \
-        (uint32_t) ((a) << 24) |        \
-        (uint32_t) ((b) << 16) |        \
-        (uint32_t) ((c) << 8)  |        \
-        (uint32_t) ((0) << 0)           \
+#define SIMPLERT_NETWORK_ADDRESS_BUILDER(a,b,c,d) ( \
+        (uint32_t) ((a) << 24) |                    \
+        (uint32_t) ((b) << 16) |                    \
+        (uint32_t) ((c) << 8)  |                    \
+        (uint32_t) ((d) << 0)                       \
 )
 
-#define TUN_NETWORK_ADDRESS TUN_NET_ADDR_HELPER(10,1,1)
+#define SIMPLERT_NETWORK_ADDRESS \
+    SIMPLERT_NETWORK_ADDRESS_BUILDER(10,1,1,0)
+
 #define NETWORK_ADDRESS(addr) ((addr) & 0xffffff00)
+
+#define DNS_ADDRESS "8.8.8.8"
+
+#define IFACE_UP_SH_PATH "./iface_up.sh"
 
 static inline void dump_addr_info(uint32_t addr, ssize_t size)
 {
@@ -66,7 +73,7 @@ static inline void process_network_packet(uint8_t *data, ssize_t size)
         (uint32_t) (data[18] << 8)  |
         (uint32_t) (data[19] << 0);
 
-    if (NETWORK_ADDRESS(dst_addr) == TUN_NETWORK_ADDRESS) {
+    if (NETWORK_ADDRESS(dst_addr) == SIMPLERT_NETWORK_ADDRESS) {
         /* dump_addr_info(dst_addr, size); */
 
         if ((acc = find_accessory_by_id(dst_addr & 0xff)) != NULL) {
@@ -99,6 +106,29 @@ static void *tun_thread_proc(void *arg)
 
     g_tun_is_running = false;
     return NULL;
+}
+
+/* FIXME */
+static bool iface_up(const char *dev)
+{
+    char cmd[1024] = { 0 };
+    char net_addr_str[32] = { 0 };
+    char host_addr_str[32] = { 0 };
+
+    uint32_t net_addr = htonl(SIMPLERT_NETWORK_ADDRESS);
+    uint32_t host_addr = htonl(SIMPLERT_NETWORK_ADDRESS | 0x1);
+    uint32_t mask = __builtin_popcount(NETWORK_ADDRESS(-1));
+
+    snprintf(net_addr_str, sizeof(net_addr_str), "%s",
+            inet_ntoa(*(struct in_addr *) &net_addr));
+
+    snprintf(host_addr_str, sizeof(host_addr_str), "%s",
+            inet_ntoa(*(struct in_addr *) &host_addr));
+
+    snprintf(cmd, sizeof(cmd), "%s %s %s %s %s %u\n",
+            IFACE_UP_SH_PATH, PLATFORM, dev, net_addr_str, host_addr_str, mask);
+
+    return system(cmd) == 0;
 }
 
 bool start_network(void)
@@ -165,5 +195,12 @@ int send_network_packet(void *data, size_t size)
     }
 
     return 0;
+}
+
+char *fill_serial_param(char *buf, size_t size, uint32_t acc_id)
+{
+    uint32_t addr = htonl(SIMPLERT_NETWORK_ADDRESS | acc_id);
+    snprintf(buf, size, "%s,%s", inet_ntoa(*(struct in_addr *) &addr), DNS_ADDRESS);
+    return buf;
 }
 

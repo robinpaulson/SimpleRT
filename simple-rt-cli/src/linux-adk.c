@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include "linux-adk.h"
+#include "network.h"
 
 #define ARRAY_SIZE(x) (sizeof((x)) / sizeof((x)[0]))
 
@@ -265,7 +266,7 @@ accessory_t *new_accessory(struct libusb_device *dev)
             free(acc);
             return NULL;
         } else {
-            sprintf(acc->serial, "10.1.1.%zu,%s", g_last_acc_id_allocated, "8.8.8.8");
+            fill_serial_param(acc->serial, sizeof(acc->serial), g_last_acc_id_allocated);
         }
     }
 

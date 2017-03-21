@@ -39,6 +39,8 @@ ifeq ($(PLATFORM),none)
 $(error unknown platform $(UNAME))
 endif
 
+CFLAGS += -DPLATFORM="\"$(PLATFORM)\""
+
 OBJ = obj
 SOURCES = src
 PLATFORM_SRC = $(SOURCES)/$(PLATFORM)
