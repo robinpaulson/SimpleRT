@@ -28,9 +28,9 @@ Create local.properties file in root dir, it should be looks like that:
    ```
    app/build/outputs/apk/app-debug.apk is your apk.
 
-   ####There is already built [apk](https://github.com/vvviperrr/SimpleRT/releases/download/1.0/simple-rt.apk)
+   #### There is already built multi-tether [apk](https://github.com/vvviperrr/SimpleRT/releases/download/1.1/simple-rt-1.1.apk.zip)
    
-   ##Now available in [f-droid](https://f-droid.org/repository/browse/?fdfilter=simplert&fdid=com.viper.simplert)
+   ## Now available in [f-droid](https://f-droid.org/repository/browse/?fdfilter=simplert&fdid=com.viper.simplert)
 
 - Desktop part:
 
@@ -38,7 +38,7 @@ Create local.properties file in root dir, it should be looks like that:
    - libusb-1.0
    - tun/tap kernel module. osx version is [here](http://tuntaposx.sourceforge.net/).
 
-   ####FIrst of all, check out iface_up.sh and change LOCAL_INTERFACE, if you need.
+   #### FIrst of all, check out iface_up.sh and change LOCAL_INTERFACE, if you need.
 
    Makefile is universal for both linux and osx, just type make.
 
@@ -49,20 +49,17 @@ Usage:
 
 First connection requires some trivial steps:
 
-![First step]
-(https://github.com/vvviperrr/SimpleRT/blob/master/screens/accessory.png)
+![First step](screens/accessory.png)
 
-![Second step]
-(https://github.com/vvviperrr/SimpleRT/blob/master/screens/vpn.png)
+![Second step](screens/vpn.png)
 
-![Third step]
-(https://github.com/vvviperrr/SimpleRT/blob/master/screens/connected.png)
+![Third step](screens/connected.png)
 
 Issues: Some apps do not recognize the reverse tethered internet connection due to ConnectivityManager policy. Just leave WiFi or 3g connection active, connection will go through SimpleRT anyway.
 
 Partially used code from [linux-adk](https://github.com/gibsson/linux-adk), which is licensed under the GNU GPLv2 or later. This project is under the GNU GPLv3 or later, which is compatible with the license of linux-adk.
 
-#####License: GNU GPL v3
+##### License: GNU GPL v3
 
 ```
 SimpleRT: Reverse tethering utility for Android
