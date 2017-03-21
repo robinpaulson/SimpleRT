@@ -32,42 +32,41 @@ static pthread_t g_tun_thread = 0;
 static volatile int g_tun_is_running = 0;
 
 #define TUN_NET_ADDR_HELPER(a,b,c) (    \
-        (uint32_t)((0) << 24) |         \
-        (uint32_t)((c) << 16) |         \
-        (uint32_t)((b) << 8)  |         \
-        (uint32_t)((a) << 0)            \
+        (uint32_t) ((a) << 24) |        \
+        (uint32_t) ((b) << 16) |        \
+        (uint32_t) ((c) << 8)  |        \
+        (uint32_t) ((0) << 0)           \
 )
 
-#define TUN_NET_ADDR TUN_NET_ADDR_HELPER(10,1,1)
-#define NETWORK_ADDRESS(addr) ((addr) & 0x00FFFFFF)
+#define TUN_NETWORK_ADDRESS TUN_NET_ADDR_HELPER(10,1,1)
+#define NETWORK_ADDRESS(addr) ((addr) & 0xffffff00)
+
+static inline void dump_addr_info(uint32_t addr, ssize_t size)
+{
+    uint32_t tmp = htonl(addr);
+    printf("packet size = %3zu, dest addr = %s, device id = %d\n", size,
+            inet_ntoa(*(struct in_addr *) &tmp),
+            addr & 0xff);
+}
 
 static inline void process_network_packet(uint8_t *data, ssize_t size)
 {
     uint32_t dst_addr;
-    uint8_t *p = data + 16; /* ptr to dst ip */
-
-    /* strange packet, ignore */
-    if (size < 20) {
-        return;
-    }
 
     /* only ipv4 supported */
-    if (((*data >> 4) & 0xf) != 4) {
+    if (size < 20 || ((*data >> 4) & 0xf) != 4) {
         return;
     }
 
+    /* dest ip addr in LE */
     dst_addr =
-        (uint32_t) (p[3] << 24) |
-        (uint32_t) (p[2] << 16) |
-        (uint32_t) (p[1] << 8)  |
-        (uint32_t) (p[0] << 0);
+        (uint32_t) (data[16] << 24) |
+        (uint32_t) (data[17] << 16) |
+        (uint32_t) (data[18] << 8)  |
+        (uint32_t) (data[19] << 0);
 
-    if (NETWORK_ADDRESS(dst_addr) == TUN_NET_ADDR) {
-
-        printf("packet size = %zu, dest addr =  %s, device id = %d\n",
-                size,
-                inet_ntoa(*(struct in_addr *) &dst_addr),
-                (dst_addr >> 24) & 0xFF);
+    if (NETWORK_ADDRESS(dst_addr) == TUN_NETWORK_ADDRESS) {
+        dump_addr_info(dst_addr, size);
 
         /* int transferred; */
         /* libusb_bulk_transfer(acc_global_handle, */
@@ -101,6 +100,11 @@ bool start_network(void)
     int tun_fd = 0;
     char tun_name[IFNAMSIZ] = { 0 };
 
+    if (g_tun_is_running) {
+        fprintf(stderr, "Network already started!\n");
+        return false;
+    }
+
     puts("starting network");
 
     if (!is_tun_present()) {
@@ -130,13 +134,18 @@ bool start_network(void)
 
 void stop_network(void)
 {
+    g_tun_is_running = 0;
+
     if (g_tun_thread) {
         puts("stopping network");
         pthread_join(g_tun_thread, NULL);
         g_tun_thread = 0;
     }
 
-    g_tun_is_running = 0;
+    if (g_tun_fd) {
+        close(g_tun_fd);
+        g_tun_fd = 0;
+    }
 }
 
 int send_network_packet(void *data, size_t size)
