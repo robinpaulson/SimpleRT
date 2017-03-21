@@ -28,7 +28,7 @@ Create local.properties file in root dir, it should be looks like that:
    ```
    app/build/outputs/apk/app-debug.apk is your apk.
 
-   ####There is already built [apk](https://github.com/vvviperrr/SimpleRT/releases/download/1.0/simple-rt.apk)
+   ####There is already built multi-tether [apk](https://github.com/vvviperrr/SimpleRT/releases/download/1.1/simple-rt-1.1.apk.zip)
    
    ##Now available in [f-droid](https://f-droid.org/repository/browse/?fdfilter=simplert&fdid=com.viper.simplert)
 
