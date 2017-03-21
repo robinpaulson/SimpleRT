@@ -22,15 +22,20 @@ TUNNEL_NET=$3
 HOST_ADDR=$4
 TUNNEL_CIDR=$5
 
+LOCAL_INTERFACE="eth0"
+
 echo configuring $TUN_DEV
 echo    network: $TUNNEL_NET
 echo    address: $HOST_ADDR
 echo    netmask: $TUNNEL_CIDR
 
-if [ "$PLATFORM" = "linux" ]; then
-    #CHANGE, IF NEEDED
-    LOCAL_INTERFACE="eth0"
+ip l show $LOCAL_INTERFACE > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo Please, check LOCAL_INTERFACE param in $0
+    exit 1
+fi
 
+if [ "$PLATFORM" = "linux" ]; then
     ifconfig $TUN_DEV $HOST_ADDR/$TUNNEL_CIDR up
     sysctl -w net.ipv4.ip_forward=1 > /dev/null
     iptables -I FORWARD -j ACCEPT
