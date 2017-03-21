@@ -3,8 +3,7 @@ Reverse [Tethering](https://en.wikipedia.org/wiki/Tethering) utility for Android
 
 Allows you to share your computer's internet connection with your Android device via a USB cable.
 
-Here is [multi-tethering](https://github.com/vvviperrr/SimpleRT/tree/multi_tether) version.
-You can connect several android devices to one Linux (only linux supports at this time) host into one virtual network!
+### Here is [multi-tethering](https://github.com/vvviperrr/SimpleRT/tree/multi_tether) version. Allows to connect several android devices to one Linux (only linux supports at this time) host into one virtual network!
 
 Development is still in progress, bugs and errors can occur.
 
