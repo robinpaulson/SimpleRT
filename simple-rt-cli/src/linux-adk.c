@@ -33,15 +33,15 @@ static const accessory_t acc_default = {
     .url = "https://github.com/vvviperrr/SimpleRT",
 };
 
-static accessory_t acc_resolved = {
+static accessory_t acc_reserved = {
     .is_running = 1,
 };
 
 /* acc list for 255.255.255.0 network mask */
 static accessory_t *acc_list[256] = {
-    [0] = &acc_resolved,    /* resolved, network addr */
-    [1] = &acc_resolved,    /* resolved, host addr */
-    [255] = &acc_resolved,  /* resolved, broadcast addr */
+    [0]     = &acc_reserved,    /* reserved, network addr   */
+    [1]     = &acc_reserved,    /* reserved, host addr      */
+    [255]   = &acc_reserved,    /* reserved, broadcast addr */
 };
 
 static size_t g_last_acc_id_allocated = 0;
