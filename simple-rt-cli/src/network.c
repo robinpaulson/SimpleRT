@@ -47,8 +47,6 @@
 #define ACC_ID_FROM_ADDR(addr) \
     ((addr) & 0xff)
 
-#define DNS_ADDRESS "8.8.8.8"
-
 #define IFACE_UP_SH_PATH "./iface_up.sh"
 
 extern int tun_alloc(char *dev);
@@ -57,6 +55,7 @@ extern bool is_tun_present(void);
 static int g_tun_fd = 0;
 static pthread_t g_tun_thread = 0;
 static volatile int g_tun_is_running = 0;
+static const network_config_t *g_network_config;
 
 static inline void dump_addr_info(uint32_t addr, ssize_t size)
 {
@@ -126,16 +125,48 @@ static bool iface_up(const char *dev)
     snprintf(host_addr_str, sizeof(host_addr_str), "%s",
             inet_ntoa(*(struct in_addr *) &host_addr));
 
-    snprintf(cmd, sizeof(cmd), "%s %s %s %s %s %u\n",
-            IFACE_UP_SH_PATH, PLATFORM, dev, net_addr_str, host_addr_str, mask);
+    snprintf(cmd, sizeof(cmd), "%s %s %s %s %s %u %s\n",
+            IFACE_UP_SH_PATH, PLATFORM, dev, net_addr_str, host_addr_str, mask,
+            g_network_config->nameserver);
 
     return system(cmd) == 0;
 }
 
-bool start_network(void)
+/* FIXME */
+char *get_system_nameserver(void)
+{
+    static char buf[128] = { 0 };
+    FILE *f;
+
+    if ((f = popen(IFACE_UP_SH_PATH " nameserver", "r")) == NULL) {
+        return NULL;
+    }
+
+    memset(buf, 0, sizeof(buf));
+
+    if (fread(buf, 1, sizeof(buf), f) == 0) {
+        pclose(f);
+        return NULL;
+    }
+
+    buf[strlen(buf) - 1] = 0;
+
+    pclose(f);
+
+    return buf;
+}
+
+bool start_network(const network_config_t *config)
 {
     int tun_fd = 0;
     char tun_name[IFNAMSIZ] = { 0 };
+
+    if (!config) {
+        fprintf(stderr, "Network config required!\n");
+        return false;
+    }
+
+    g_network_config = config;
 
     if (g_tun_is_running) {
         fprintf(stderr, "Network already started!\n");
@@ -172,6 +203,7 @@ bool start_network(void)
 void stop_network(void)
 {
     g_tun_is_running = 0;
+    g_network_config = NULL;
 
     if (g_tun_thread) {
         puts("stopping network");
@@ -201,7 +233,9 @@ int send_network_packet(void *data, size_t size)
 char *fill_serial_param(char *buf, size_t size, uint32_t acc_id)
 {
     uint32_t addr = htonl(SIMPLERT_NETWORK_ADDRESS | acc_id);
-    snprintf(buf, size, "%s,%s", inet_ntoa(*(struct in_addr *) &addr), DNS_ADDRESS);
+    snprintf(buf, size, "%s,%s",
+            inet_ntoa(*(struct in_addr *) &addr),
+            g_network_config->nameserver);
     return buf;
 }
 

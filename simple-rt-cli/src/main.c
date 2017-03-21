@@ -50,16 +50,26 @@ int main(int argc, char *argv[])
     int rc = 0;
     libusb_hotplug_callback_handle callback_handle;
 
+    network_config_t network_config = {
+        .nameserver = DEFAULT_NAMESERVER,
+    };
+
     libusb_init(NULL);
 
     if (argc > 1) {
         const char *param = argv[1];
 
-        if (strcmp(param, "-d") == 0) {
-            puts("debug mode enabled");
-            libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_DEBUG);
+        if (strcmp(param, "-n") == 0) {
+            if (argc < 3) {
+                fprintf(stderr, "nameserver required!\n");
+                return EXIT_FAILURE;
+            } else if (strcmp(argv[2], "local") == 0) {
+                network_config.nameserver = get_system_nameserver();
+            } else {
+                network_config.nameserver = argv[2];
+            }
         } else if (strcmp(param, "-h") == 0) {
-            puts("usage: sudo simple-rt [-h -d]");
+            puts("usage: sudo simple-rt [-h | -n [nameserver | local] ]");
             return EXIT_SUCCESS;
         } else {
             fprintf(stderr, "Unknown param: %s\n", param);
@@ -67,12 +77,17 @@ int main(int argc, char *argv[])
         }
     }
 
+    if (getenv("DEBUG") != NULL) {
+        puts("debug mode enabled");
+        libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_DEBUG);
+    }
+
     if (geteuid() != 0) {
         fprintf(stderr, "Run app as root!\n");
         return EXIT_FAILURE;
     }
 
-    if (!start_network()) {
+    if (!start_network(&network_config)) {
         fprintf(stderr, "Unable to start network!\n");
         return EXIT_FAILURE;
     }

@@ -22,10 +22,17 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-bool start_network(void);
+#define DEFAULT_NAMESERVER "8.8.8.8"
+
+typedef struct {
+    char *nameserver;
+} network_config_t;
+
+bool start_network(const network_config_t *config);
 void stop_network(void);
 int send_network_packet(void *data, size_t size);
 
 char *fill_serial_param(char *buf, size_t size, uint32_t acc_id);
+char *get_system_nameserver(void);
 
 #endif
