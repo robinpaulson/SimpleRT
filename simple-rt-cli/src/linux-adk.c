@@ -32,10 +32,9 @@ static const accessory_t acc_default = {
     .serial = "10.1.1.2,8.8.8.8",
 };
 
+/* check, is arrived device is accessory */
 bool is_accessory_present(accessory_t *acc)
 {
-    struct libusb_device_handle *handle;
-
     static const uint16_t aoa_pids[] = {
         AOA_ACCESSORY_PID,
         AOA_ACCESSORY_ADB_PID,
@@ -51,18 +50,18 @@ bool is_accessory_present(accessory_t *acc)
         uint16_t pid = aoa_pids[i];
 
         if (acc->vid == vid && acc->pid == pid) {
-            handle = libusb_open_device_with_vid_pid(NULL, vid, pid);
-            if (handle != NULL) {
+            int ret = libusb_open(acc->device, &acc->handle);
+            if (ret == 0) {
                 printf("Found accessory %4.4x:%4.4x\n", vid, pid);
-                acc->handle = handle;
                 return true;
+            } else {
+                fprintf(stderr, "Error opening accessory device: %s\n", libusb_strerror(ret));
+                return false;
             }
-            /* present, but unable open device */
-            return false;
         }
     }
 
-    /* not present */
+    /* this is not accessory */
     return false;
 }
 
@@ -75,6 +74,7 @@ int init_accessory(accessory_t *acc)
         return 0;
     }
 
+    /* FIXME */
     /* Trying to open supplied device */
     acc->handle = libusb_open_device_with_vid_pid(NULL, acc->vid, acc->pid);
     if (acc->handle == NULL) {
@@ -204,16 +204,34 @@ error:
     return ret < 0 ? -1 : 0;
 }
 
-accessory_t *new_accessory(void)
+accessory_t *new_accessory(struct libusb_device *dev)
 {
-    accessory_t *acc = malloc(sizeof(accessory_t));
+    accessory_t *acc;
+    struct libusb_device_descriptor desc;
+
+    libusb_get_device_descriptor(dev, &desc);
+
+    acc = malloc(sizeof(accessory_t));
     *acc = acc_default;
+
+    acc->vid = desc.idVendor;
+    acc->pid = desc.idProduct;
+    acc->device = libusb_ref_device(dev);
+
     return acc;
 }
 
 void free_accessory(accessory_t *acc)
 {
-    if (acc->handle != NULL) {
+    if (!acc) {
+        return;
+    }
+
+    if (acc->device) {
+        libusb_unref_device(acc->device);
+    }
+
+    if (acc->handle) {
         printf("Closing USB device\n");
         libusb_release_interface(acc->handle, 0);
         libusb_close(acc->handle);

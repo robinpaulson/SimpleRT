@@ -83,19 +83,12 @@ static int hotplug_callback(struct libusb_context *ctx,
         libusb_hotplug_event event,
         void * arg)
 {
-    accessory_t *acc;
-    struct libusb_device_descriptor desc;
-
     if (event != LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED) {
         fprintf(stderr, "Unknown libusb_hotplug_event: %d\n", event);
         return 0;
     }
 
-    libusb_get_device_descriptor(dev, &desc);
-
-    acc = new_accessory();
-    acc->vid = desc.idVendor;
-    acc->pid = desc.idProduct;
+    accessory_t * acc = new_accessory(dev);
 
     pthread_t th;
     pthread_attr_t attrs;
