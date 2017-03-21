@@ -25,12 +25,11 @@
 #include <arpa/inet.h>
 
 #include "network.h"
-#include "tun.h"
 #include "linux-adk.h"
 
-static int g_tun_fd = 0;
-static pthread_t g_tun_thread = 0;
-static volatile int g_tun_is_running = 0;
+#ifndef IFNAMSIZ
+#define IFNAMSIZ 16
+#endif
 
 #define SIMPLERT_NETWORK_ADDRESS_BUILDER(a,b,c,d) ( \
         (uint32_t) ((a) << 24) |                    \
@@ -47,6 +46,13 @@ static volatile int g_tun_is_running = 0;
 #define DNS_ADDRESS "8.8.8.8"
 
 #define IFACE_UP_SH_PATH "./iface_up.sh"
+
+extern int tun_alloc(char *dev);
+extern bool is_tun_present(void);
+
+static int g_tun_fd = 0;
+static pthread_t g_tun_thread = 0;
+static volatile int g_tun_is_running = 0;
 
 static inline void dump_addr_info(uint32_t addr, ssize_t size)
 {

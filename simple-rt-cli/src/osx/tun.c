@@ -18,10 +18,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "tun.h"
 
 #define TUN_NAME "tun0"
 #define TUN_DEV "/dev/" TUN_NAME
@@ -40,7 +40,7 @@ int tun_alloc(char *dev)
         return -1;
     }
 
-    strncpy(dev, TUN_NAME, IFNAMSIZ - 1);
+    strcpy(dev, TUN_NAME);
 
     return fd;
 }

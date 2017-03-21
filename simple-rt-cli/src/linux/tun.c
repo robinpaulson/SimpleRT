@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -25,7 +26,6 @@
 #include <linux/if.h>
 #include <linux/if_tun.h>
 #include <sys/ioctl.h>
-#include "tun.h"
 
 static const char clonedev[] = "/dev/net/tun";
 
