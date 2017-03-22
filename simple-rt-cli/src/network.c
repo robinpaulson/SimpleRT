@@ -125,9 +125,10 @@ static bool iface_up(const char *dev)
     snprintf(host_addr_str, sizeof(host_addr_str), "%s",
             inet_ntoa(*(struct in_addr *) &host_addr));
 
-    snprintf(cmd, sizeof(cmd), "%s %s %s %s %s %u %s\n",
+    snprintf(cmd, sizeof(cmd), "%s %s %s %s %s %u %s %s\n",
             IFACE_UP_SH_PATH, PLATFORM, dev, net_addr_str, host_addr_str, mask,
-            g_network_config->nameserver);
+            g_network_config->nameserver,
+            g_network_config->interface);
 
     return system(cmd) == 0;
 }

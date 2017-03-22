@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
     libusb_hotplug_callback_handle callback_handle;
 
     network_config_t network_config = {
+        .interface = DEFAULT_INTERFACE,
         .nameserver = DEFAULT_NAMESERVER,
     };
 

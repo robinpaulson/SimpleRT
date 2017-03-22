@@ -22,18 +22,19 @@ TUNNEL_NET=$3
 HOST_ADDR=$4
 TUNNEL_CIDR=$5
 NAMESERVER=$6
+LOCAL_INTERFACE=$7
 
-LOCAL_INTERFACE="eth0"
-
-echo configuring    $TUN_DEV
-echo    network:    $TUNNEL_NET
-echo    address:    $HOST_ADDR
-echo    netmask:    $TUNNEL_CIDR
-echo    nameserver: $NAMESERVER
+echo configuring:
+echo local interface:       $LOCAL_INTERFACE
+echo virtual interface:     $TUN_DEV
+echo network:               $TUNNEL_NET
+echo address:               $HOST_ADDR
+echo netmask:               $TUNNEL_CIDR
+echo nameserver:            $NAMESERVER
 
 ip l show $LOCAL_INTERFACE > /dev/null
 if [ ! $? -eq 0 ]; then
-    echo Please, check LOCAL_INTERFACE param in $0
+    echo Supply valid local interface!
     exit 1
 fi
 

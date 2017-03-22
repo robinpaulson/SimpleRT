@@ -22,9 +22,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define DEFAULT_INTERFACE "eth0"
 #define DEFAULT_NAMESERVER "8.8.8.8"
 
 typedef struct {
+    const char *interface;
     const char *nameserver;
 } network_config_t;
 
