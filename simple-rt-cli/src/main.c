@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <getopt.h>
 
 #include "linux-adk.h"
 #include "network.h"
@@ -57,31 +58,33 @@ int main(int argc, char *argv[])
 
     libusb_init(NULL);
 
-    /* FIXME */
-    if (argc > 1) {
-        const char *param = argv[1];
-
-        if (strcmp(param, "-n") == 0) {
-            if (argc < 3) {
-                fprintf(stderr, "nameserver required!\n");
-                return EXIT_FAILURE;
-            } else if (strcmp(argv[2], "local") == 0) {
+    while ((rc = getopt (argc, argv, "hdi:n:")) != -1) {
+        switch (rc) {
+        case 'h':
+            printf("usage: sudo %s [-h] [-i interface] [-n nameserver|\"local\" ]\n"
+                    "default params: -i %s -n %s\n",
+                    argv[0],
+                    network_config.interface,
+                    network_config.nameserver);
+            return EXIT_SUCCESS;
+        case 'd':
+            puts("debug mode enabled");
+            libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_DEBUG);
+            break;
+        case 'i':
+            network_config.interface = optarg;
+            break;
+        case 'n':
+            if (!strcmp(optarg, "local")) {
                 network_config.nameserver = get_system_nameserver();
             } else {
-                network_config.nameserver = argv[2];
+                network_config.nameserver = optarg;
             }
-        } else if (strcmp(param, "-h") == 0) {
-            puts("usage: sudo simple-rt [-h | -n [nameserver | local] ]");
-            return EXIT_SUCCESS;
-        } else {
-            fprintf(stderr, "Unknown param: %s\n", param);
+            break;
+        case '?':
+        default:
             return EXIT_FAILURE;
         }
-    }
-
-    if (getenv("DEBUG") != NULL) {
-        puts("debug mode enabled");
-        libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_DEBUG);
     }
 
     if (geteuid() != 0) {
