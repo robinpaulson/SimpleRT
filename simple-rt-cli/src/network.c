@@ -132,30 +132,6 @@ static bool iface_up(const char *dev)
     return system(cmd) == 0;
 }
 
-/* FIXME */
-char *get_system_nameserver(void)
-{
-    static char buf[128] = { 0 };
-    FILE *f;
-
-    if ((f = popen(IFACE_UP_SH_PATH " nameserver", "r")) == NULL) {
-        return NULL;
-    }
-
-    memset(buf, 0, sizeof(buf));
-
-    if (fread(buf, 1, sizeof(buf), f) == 0) {
-        pclose(f);
-        return NULL;
-    }
-
-    buf[strlen(buf) - 1] = 0;
-
-    pclose(f);
-
-    return buf;
-}
-
 bool start_network(const network_config_t *config)
 {
     int tun_fd = 0;

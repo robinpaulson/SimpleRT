@@ -33,6 +33,6 @@ void stop_network(void);
 int send_network_packet(void *data, size_t size);
 
 char *fill_serial_param(char *buf, size_t size, uint32_t acc_id);
-char *get_system_nameserver(void);
+extern char *get_system_nameserver(void);
 
 #endif

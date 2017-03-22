@@ -25,11 +25,6 @@ NAMESERVER=$6
 
 LOCAL_INTERFACE="eth0"
 
-if [ "$PLATFORM" = "nameserver" ]; then
-    grep nameserver /etc/resolv.conf | head -n 1 | awk '{print $2}'
-    exit 0
-fi
-
 echo configuring    $TUN_DEV
 echo    network:    $TUNNEL_NET
 echo    address:    $HOST_ADDR

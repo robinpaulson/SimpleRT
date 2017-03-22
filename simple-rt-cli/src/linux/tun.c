@@ -27,6 +27,12 @@
 #include <linux/if_tun.h>
 #include <sys/ioctl.h>
 
+#include <arpa/inet.h>
+#include <arpa/nameser.h>
+#include <resolv.h>
+
+#include "network.h"
+
 static const char clonedev[] = "/dev/net/tun";
 
 bool is_tun_present(void)
@@ -57,3 +63,27 @@ int tun_alloc(char *dev)
     strcpy(dev, ifr.ifr_name);
     return fd;
 }
+
+char *get_system_nameserver(void)
+{
+    struct __res_state rs;
+    static char buf[128];
+
+    if (res_ninit(&rs) < 0) {
+        goto end;
+    }
+
+    if (!rs.nscount) {
+        goto end;
+    }
+
+    /* using first nameserver */
+    memset(buf, 0, sizeof(buf));
+    strncpy(buf, inet_ntoa(rs.nsaddr_list[0].sin_addr), sizeof(buf) - 1);
+    return buf;
+
+end:
+    fprintf(stderr, "Cannot find system nameserver. Default one will be used.\n");
+    return DEFAULT_NAMESERVER;
+}
+
