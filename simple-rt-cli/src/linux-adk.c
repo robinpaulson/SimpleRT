@@ -79,9 +79,6 @@ typedef struct accessory_t {
     /* FIXME: atomic needed */
     volatile int is_running;
 
-    /*FIXME: using as accessory params, dirty hack? */
-    char serial[128];
-
     struct libusb_device *device;
     struct libusb_device_handle *handle;
 } accessory_t;
@@ -151,6 +148,8 @@ static int init_accessory(accessory_t *acc)
 {
     int ret = 0, is_detached = 0;
 
+    char serial_str[128];
+
     /* Check if device is not already in accessory mode */
     if (is_accessory_present(acc)) {
         return 0;
@@ -207,7 +206,7 @@ static int init_accessory(accessory_t *acc)
         goto error;
     }
 
-    fill_serial_param(acc->serial, sizeof(acc->serial), new_acc_id);
+    fill_serial_param(serial_str, sizeof(serial_str), new_acc_id);
 
     /* In case of a no_app accessory, the version must be >= 2 */
     if ((acc->aoa_version < 2) && !acc->manufacturer) {
@@ -264,12 +263,12 @@ static int init_accessory(accessory_t *acc)
     if (ret < 0)
         goto error;
 
-    printf(" sending serial number: %s\n", acc->serial);
+    printf(" sending serial number: %s\n", serial_str);
     ret = libusb_control_transfer(acc->handle,
             LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
             AOA_SEND_IDENT, 0, AOA_STRING_SER_ID,
-            (uint8_t *) acc->serial,
-            strlen(acc->serial) + 1, 0);
+            (uint8_t *) serial_str,
+            strlen(serial_str) + 1, 0);
     if (ret < 0)
         goto error;
 
