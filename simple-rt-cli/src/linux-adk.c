@@ -104,8 +104,6 @@ static accessory_t *acc_list[256] = {
     [255]   = &acc_reserved,    /* reserved, broadcast addr */
 };
 
-static uint32_t g_last_acc_id_allocated = 0;
-
 static uint32_t find_free_accessory_id(void)
 {
     for (uint32_t i = 0; i < ARRAY_SIZE(acc_list); i++) {
@@ -136,7 +134,6 @@ static bool is_accessory_present(accessory_t *acc)
         if (acc->vid == AOA_ACCESSORY_VID && acc->pid == aoa_pids[i]) {
             if ((ret = libusb_open(acc->device, &acc->handle)) == 0) {
                 printf("Found accessory %4.4x:%4.4x\n", acc->vid, acc->pid);
-                g_last_acc_id_allocated = 0;
                 return true;
             } else {
                 fprintf(stderr, "Error opening accessory device: %s\n",
@@ -203,6 +200,14 @@ static int init_accessory(accessory_t *acc)
 
     /* Some Android devices require a waiting period between transfer calls */
     usleep(10000);
+
+    int new_acc_id;
+    if ((new_acc_id = find_free_accessory_id()) == 0) {
+        fprintf(stderr, "No free accessory id's left\n");
+        goto error;
+    }
+
+    fill_serial_param(acc->serial, sizeof(acc->serial), new_acc_id);
 
     /* In case of a no_app accessory, the version must be >= 2 */
     if ((acc->aoa_version < 2) && !acc->manufacturer) {
@@ -295,6 +300,7 @@ static void *accessory_thread_proc(void *param)
     accessory_t *acc = param;
     int ret = 0, transferred = 0;
     uint8_t acc_buf[ACC_BUF_SIZE];
+    uint32_t acc_id = 0;
 
     /* init accessory from new connected device and wait for present */
     if (!is_accessory_present(acc)) {
@@ -313,6 +319,33 @@ static void *accessory_thread_proc(void *param)
 
     acc->is_running = true;
 
+    /* read first packet and map acc->id */
+    while (acc->is_running) {
+        ret = libusb_bulk_transfer(acc->handle, AOA_ACCESSORY_EP_IN,
+                acc_buf, sizeof(acc_buf), &transferred, ACC_TIMEOUT);
+        if (ret < 0) {
+            if (ret == LIBUSB_ERROR_TIMEOUT) {
+                continue;
+            } else {
+                fprintf(stderr, "Acc thread: bulk transfer error: %s\n",
+                        libusb_strerror(ret));
+                acc->is_running = false;
+                break;
+            }
+        } else {
+            if ((acc_id = get_acc_id_from_packet(acc_buf, transferred, false)) != 0) {
+                acc->id = acc_id;
+                acc_list[acc->id] = acc;
+                /* stored, break this cycle */
+                break;
+            } else {
+                /* invalid packet, waiting next */
+                continue;
+            }
+        }
+    }
+
+    /* read rest packets */
     while (acc->is_running) {
         ret = libusb_bulk_transfer(acc->handle, AOA_ACCESSORY_EP_IN,
                 acc_buf, sizeof(acc_buf), &transferred, ACC_TIMEOUT);
@@ -360,21 +393,6 @@ accessory_t *new_accessory(struct libusb_device *dev)
     acc->vid = desc.idVendor;
     acc->pid = desc.idProduct;
     acc->device = libusb_ref_device(dev);
-
-    /* FIXME: REALLY bad impl of serial->id mapping */
-    if (g_last_acc_id_allocated) {
-        acc->id = g_last_acc_id_allocated;
-        acc_list[acc->id] = acc;
-        g_last_acc_id_allocated = 0;
-    } else {
-        if ((g_last_acc_id_allocated = find_free_accessory_id()) == 0) {
-            fprintf(stderr, "No free accessory id's left\n");
-            free(acc);
-            return NULL;
-        } else {
-            fill_serial_param(acc->serial, sizeof(acc->serial), g_last_acc_id_allocated);
-        }
-    }
 
     return acc;
 }

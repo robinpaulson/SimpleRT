@@ -34,6 +34,8 @@ bool start_network(const network_config_t *config);
 void stop_network(void);
 int send_network_packet(void *data, size_t size);
 
+uint32_t get_acc_id_from_packet(const uint8_t *data, size_t size, bool dst_addr);
+
 char *fill_serial_param(char *buf, size_t size, uint32_t acc_id);
 extern char *get_system_nameserver(void);
 

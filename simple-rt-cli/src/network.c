@@ -65,36 +65,45 @@ static inline void dump_addr_info(uint32_t addr, ssize_t size)
             addr & 0xff);
 }
 
-static inline void process_network_packet(uint8_t *data, ssize_t size)
+uint32_t get_acc_id_from_packet(const uint8_t *data, size_t size, bool dst_addr)
 {
-    uint32_t dst_addr;
+    uint32_t addr;
+    unsigned int addr_offset = (dst_addr ? 16 : 12);
 
     /* only ipv4 supported */
     if (size < 20 || ((*data >> 4) & 0xf) != 4) {
-        return;
+        goto end;
     }
 
     /* dest ip addr in LE */
-    dst_addr =
-        (uint32_t) (data[16] << 24) |
-        (uint32_t) (data[17] << 16) |
-        (uint32_t) (data[18] << 8)  |
-        (uint32_t) (data[19] << 0);
+    addr =
+        (uint32_t) (data[addr_offset + 0] << 24) |
+        (uint32_t) (data[addr_offset + 1] << 16) |
+        (uint32_t) (data[addr_offset + 2] << 8)  |
+        (uint32_t) (data[addr_offset + 3] << 0);
 
-    if (NETWORK_ADDRESS(dst_addr) == SIMPLERT_NETWORK_ADDRESS) {
-        /* dump_addr_info(dst_addr, size); */
-        send_accessory_packet(data, size, ACC_ID_FROM_ADDR(dst_addr));
+    if (NETWORK_ADDRESS(addr) == SIMPLERT_NETWORK_ADDRESS) {
+        /* dump_addr_info(addr, size); */
+        return ACC_ID_FROM_ADDR(addr);
     }
+
+end:
+    return 0;
 }
 
 static void *tun_thread_proc(void *arg)
 {
     ssize_t nread;
     uint8_t acc_buf[ACC_BUF_SIZE];
+    uint32_t acc_id = 0;
 
     while (g_tun_is_running) {
         if ((nread = read(g_tun_fd, acc_buf, sizeof(acc_buf))) > 0) {
-            process_network_packet(acc_buf, nread);
+            if ((acc_id = get_acc_id_from_packet(acc_buf, nread, true)) != 0) {
+                send_accessory_packet(acc_buf, nread, acc_id);
+            } else {
+                /* invalid packet received, ignore */
+            }
         } else if (nread < 0) {
             fprintf(stderr, "Error reading from tun: %s\n", strerror(errno));
             break;
