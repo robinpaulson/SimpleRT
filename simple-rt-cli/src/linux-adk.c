@@ -101,7 +101,16 @@ static accessory_t *acc_list[256] = {
     [255]   = &acc_reserved,    /* reserved, broadcast addr */
 };
 
-static uint32_t find_free_accessory_id(void)
+static bool is_accessory_id_valid(uint32_t acc_id)
+{
+    if (!acc_id || acc_id >= ARRAY_SIZE(acc_list)) {
+        return false;
+    }
+
+    return true;
+}
+
+static uint32_t acquire_accessory_id(void)
 {
     for (uint32_t i = 0; i < ARRAY_SIZE(acc_list); i++) {
         if (acc_list[i] == NULL) {
@@ -109,7 +118,37 @@ static uint32_t find_free_accessory_id(void)
             return i;
         }
     }
+
     return 0;
+}
+
+static void release_accessory_id(uint32_t acc_id)
+{
+    if (!is_accessory_id_valid(acc_id)) {
+        return;
+    }
+
+    acc_list[acc_id] = NULL;
+}
+
+static bool store_accessory_id(accessory_t *acc, uint32_t acc_id)
+{
+    if (!acc || !is_accessory_id_valid(acc_id)) {
+        return false;
+    }
+
+    acc->id = acc_id;
+    acc_list[acc->id] = acc;
+    return true;
+}
+
+static accessory_t *find_accessory_by_id(uint32_t acc_id)
+{
+    if (!is_accessory_id_valid(acc_id)) {
+        return NULL;
+    }
+
+    return acc_list[acc_id];
 }
 
 /* check, is arrived device is accessory */
@@ -201,7 +240,7 @@ static int init_accessory(accessory_t *acc)
     usleep(10000);
 
     int new_acc_id;
-    if ((new_acc_id = find_free_accessory_id()) == 0) {
+    if ((new_acc_id = acquire_accessory_id()) == 0) {
         fprintf(stderr, "No free accessory id's left\n");
         goto error;
     }
@@ -333,8 +372,7 @@ static void *accessory_thread_proc(void *param)
             }
         } else {
             if ((acc_id = get_acc_id_from_packet(acc_buf, transferred, false)) != 0) {
-                acc->id = acc_id;
-                acc_list[acc->id] = acc;
+                store_accessory_id(acc, acc_id);
                 /* stored, break this cycle */
                 break;
             } else {
@@ -404,7 +442,7 @@ void free_accessory(accessory_t *acc)
     }
 
     if (acc->id) {
-        acc_list[acc->id] = NULL;
+        release_accessory_id(acc->id);
     }
 
     if (acc->device) {
@@ -425,12 +463,7 @@ int send_accessory_packet(void *data, size_t size, uint32_t acc_id)
 {
     accessory_t *acc;
 
-    /* check is id valid */
-    if (acc_id >= ARRAY_SIZE(acc_list)) {
-        return -1;
-    }
-
-    if ((acc = acc_list[acc_id]) != NULL) {
+    if ((acc = find_accessory_by_id(acc_id)) != NULL) {
         /* FIXME: error handling */
         int transferred;
         libusb_bulk_transfer(acc->handle,
