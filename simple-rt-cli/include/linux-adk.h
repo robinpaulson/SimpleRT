@@ -22,14 +22,13 @@
 #include <stdint.h>
 #include <libusb.h>
 
-#define ACC_BUF_SIZE 4096
+#include "accessory.h"
 
-typedef struct accessory_t accessory_t;
+/* Endpoint Addresses TODO get from interface descriptor */
+#define AOA_ACCESSORY_EP_IN         0x81
+#define AOA_ACCESSORY_EP_OUT        0x02
+#define AOA_ACCESSORY_INTERFACE     0x00
 
-accessory_t *new_accessory(struct libusb_device *dev);
-void free_accessory(accessory_t *acc);
-
-void run_accessory_detached(accessory_t *acc);
-int send_accessory_packet(void *data, size_t size, uint32_t acc_id);
+accessory_t *probe_usb_device(struct libusb_device *dev, const char *serial_str);
 
 #endif /* _LINUX_ADK_H_ */
