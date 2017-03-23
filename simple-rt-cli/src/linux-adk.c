@@ -17,16 +17,11 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include <pthread.h>
 
 #include "linux-adk.h"
-#include "network.h"
-
-#define ARRAY_SIZE(x) (sizeof((x)) / sizeof((x)[0]))
 
 /* Android Open Accessory protocol defines */
 #define AOA_GET_PROTOCOL            51
@@ -55,36 +50,13 @@
 #define AOA_ACCESSORY_AUDIO_PID     0x2D04	/* accessory + audio */
 #define AOA_ACCESSORY_AUDIO_ADB_PID 0x2D05	/* accessory + audio + adb */
 
-/* Endpoint Addresses TODO get from interface descriptor */
-#define AOA_ACCESSORY_EP_IN         0x81
-#define AOA_ACCESSORY_EP_OUT        0x02
-#define AOA_ACCESSORY_INTERFACE     0x00
-
-/* ACC params */
-#define ACC_TIMEOUT 200
-
-/* Structures */
-typedef struct accessory_t {
+static const struct {
     const char *manufacturer;
     const char *model;
     const char *description;
     const char *version;
     const char *url;
-
-    uint32_t id;
-    uint16_t vid;
-    uint16_t pid;
-    uint16_t aoa_version;
-
-    /* FIXME: atomic needed */
-    volatile int is_running;
-
-    struct libusb_device *device;
-    struct libusb_device_handle *handle;
-} accessory_t;
-
-
-static const accessory_t acc_default = {
+} accessory_params = {
     .manufacturer = "Konstantin Menyaev",
     .model = "SimpleRT",
     .description = "Simple Reverse Tethering",
@@ -92,120 +64,61 @@ static const accessory_t acc_default = {
     .url = "https://github.com/vvviperrr/SimpleRT",
 };
 
-static accessory_t acc_reserved;
-
-/* acc list for 255.255.255.0 network mask */
-static accessory_t *acc_list[256] = {
-    [0]     = &acc_reserved,    /* reserved, network addr   */
-    [1]     = &acc_reserved,    /* reserved, host addr      */
-    [255]   = &acc_reserved,    /* reserved, broadcast addr */
-};
-
-static bool is_accessory_id_valid(uint32_t acc_id)
+static bool is_accessory_present(struct libusb_device *dev)
 {
-    if (!acc_id || acc_id >= ARRAY_SIZE(acc_list)) {
-        return false;
-    }
-
-    return true;
-}
-
-static uint32_t acquire_accessory_id(void)
-{
-    for (uint32_t i = 0; i < ARRAY_SIZE(acc_list); i++) {
-        if (acc_list[i] == NULL) {
-            /* free id found */
-            return i;
-        }
-    }
-
-    return 0;
-}
-
-static void release_accessory_id(uint32_t acc_id)
-{
-    if (!is_accessory_id_valid(acc_id)) {
-        return;
-    }
-
-    acc_list[acc_id] = NULL;
-}
-
-static bool store_accessory_id(accessory_t *acc, uint32_t acc_id)
-{
-    if (!acc || !is_accessory_id_valid(acc_id)) {
-        return false;
-    }
-
-    acc->id = acc_id;
-    acc_list[acc->id] = acc;
-    return true;
-}
-
-static accessory_t *find_accessory_by_id(uint32_t acc_id)
-{
-    if (!is_accessory_id_valid(acc_id)) {
-        return NULL;
-    }
-
-    return acc_list[acc_id];
-}
-
-/* check, is arrived device is accessory */
-static bool is_accessory_present(accessory_t *acc)
-{
-    int ret;
-
     static const uint16_t aoa_pids[] = {
         AOA_ACCESSORY_PID,
         AOA_ACCESSORY_ADB_PID,
         AOA_AUDIO_PID,
         AOA_AUDIO_ADB_PID,
         AOA_ACCESSORY_AUDIO_PID,
-        AOA_ACCESSORY_AUDIO_ADB_PID
+        AOA_ACCESSORY_AUDIO_ADB_PID,
     };
 
-    /* Trying to open all the AOA IDs possible */
+    struct libusb_device_descriptor desc;
+
+    libusb_get_device_descriptor(dev, &desc);
+
     for (size_t i = 0; i < ARRAY_SIZE(aoa_pids); i++) {
-        if (acc->vid == AOA_ACCESSORY_VID && acc->pid == aoa_pids[i]) {
-            if ((ret = libusb_open(acc->device, &acc->handle)) == 0) {
-                printf("Found accessory %4.4x:%4.4x\n", acc->vid, acc->pid);
-                return true;
-            } else {
-                fprintf(stderr, "Error opening accessory device: %s\n",
-                        libusb_strerror(ret));
-                return false;
-            }
+        if (desc.idVendor == AOA_ACCESSORY_VID && desc.idProduct == aoa_pids[i]) {
+            printf("Found accessory %4.4x:%4.4x\n", desc.idVendor, desc.idProduct);
+            return true;
         }
     }
 
-    /* this is not accessory */
     return false;
 }
 
-static int init_accessory(accessory_t *acc)
+accessory_t *probe_usb_device(struct libusb_device *dev, const char *serial_str)
 {
-    int ret = 0, is_detached = 0;
+    int ret = 0;
+    int is_detached = 0;
+    uint16_t aoa_version = 0;
 
-    char serial_str[128];
+    struct libusb_device_handle *handle = NULL;
 
-    /* Check if device is not already in accessory mode */
-    if (is_accessory_present(acc)) {
-        return 0;
+    if ((ret = libusb_open(dev, &handle)) != 0) {
+        fprintf(stderr, "Error opening usb device: %s\n",
+                libusb_strerror(ret));
+        return NULL;
     }
 
-    /* FIXME */
-    /* Trying to open supplied device */
-    acc->handle = libusb_open_device_with_vid_pid(NULL, acc->vid, acc->pid);
-    if (acc->handle == NULL) {
-        printf("Unable to open device...\n");
-        return -1;
+    if (is_accessory_present(dev)) {
+        /* Claiming first (accessory) interface from usb device */
+        ret = libusb_claim_interface(handle, AOA_ACCESSORY_INTERFACE);
+        if (ret != 0) {
+            fprintf(stderr, "Error claiming interface: %s\n", libusb_strerror(ret));
+            goto error;
+        }
+
+        /* create accessory struct */
+        return new_accessory(handle);
     }
 
     /* Check whether a kernel driver is attached. If so, we'll need to detach it. */
-    if (libusb_kernel_driver_active(acc->handle, AOA_ACCESSORY_INTERFACE)) {
+    if (libusb_kernel_driver_active(handle, AOA_ACCESSORY_INTERFACE)) {
         puts("Kernel driver is active!");
-        ret = libusb_detach_kernel_driver(acc->handle, AOA_ACCESSORY_INTERFACE);
+        ret = libusb_detach_kernel_driver(handle, AOA_ACCESSORY_INTERFACE);
         if (ret == 0) {
             is_detached = 1;
             puts("Kernel driver detached!");
@@ -218,92 +131,75 @@ static int init_accessory(accessory_t *acc)
     }
 
     /* Now asking if device supports Android Open Accessory protocol */
-    ret = libusb_control_transfer(acc->handle,
+    ret = libusb_control_transfer(handle,
             LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR,
             AOA_GET_PROTOCOL, 0, 0,
-            (uint8_t *) &acc->aoa_version,
-            sizeof(acc->aoa_version), 0);
+            (uint8_t *) &aoa_version, sizeof(aoa_version), 0);
     if (ret < 0) {
-        printf("Device %4.4x:%4.4x is not support accessory! Reason: %s\n",
-                acc->vid, acc->pid, libusb_strerror(ret));
         goto error;
     }
 
-    if (!acc->aoa_version) {
-        puts("Device is not support accessory");
+    if (!aoa_version) {
+        fprintf(stderr, "Device is not support accessory!\n");
+        ret = 0;
         goto error;
     }
 
-    printf("Device supports AOA %d.0!\n", acc->aoa_version);
+    printf("Device supports AOA %d.0!\n", aoa_version);
 
     /* Some Android devices require a waiting period between transfer calls */
     usleep(10000);
 
-    int new_acc_id;
-    if ((new_acc_id = acquire_accessory_id()) == 0) {
-        fprintf(stderr, "No free accessory id's left\n");
-        goto error;
-    }
-
-    fill_serial_param(serial_str, sizeof(serial_str), new_acc_id);
-
-    /* In case of a no_app accessory, the version must be >= 2 */
-    if ((acc->aoa_version < 2) && !acc->manufacturer) {
-        printf("Connecting without an Android App only for AOA 2.0\n");
-        goto error;
-    }
-
     printf("Sending identification to the device\n");
 
-    printf(" sending manufacturer: %s\n", acc->manufacturer);
-    ret = libusb_control_transfer(acc->handle,
+    printf(" sending manufacturer: %s\n", accessory_params.manufacturer);
+    ret = libusb_control_transfer(handle,
             LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
-            AOA_SEND_IDENT, 0,
-            AOA_STRING_MAN_ID,
-            (uint8_t *) acc->manufacturer,
-            strlen(acc->manufacturer) + 1, 0);
+            AOA_SEND_IDENT, 0, AOA_STRING_MAN_ID,
+            (uint8_t *) accessory_params.manufacturer,
+            strlen(accessory_params.manufacturer) + 1, 0);
     if (ret < 0)
         goto error;
 
-    printf(" sending model: %s\n", acc->model);
-    ret = libusb_control_transfer(acc->handle,
+    printf(" sending model: %s\n", accessory_params.model);
+    ret = libusb_control_transfer(handle,
             LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
             AOA_SEND_IDENT, 0,
             AOA_STRING_MOD_ID,
-            (uint8_t *) acc->model,
-            strlen(acc->model) + 1, 0);
+            (uint8_t *) accessory_params.model,
+            strlen(accessory_params.model) + 1, 0);
     if (ret < 0)
         goto error;
 
-    printf(" sending description: %s\n", acc->description);
-    ret = libusb_control_transfer(acc->handle,
+    printf(" sending description: %s\n", accessory_params.description);
+    ret = libusb_control_transfer(handle,
             LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
             AOA_SEND_IDENT, 0, AOA_STRING_DSC_ID,
-            (uint8_t *) acc->description,
-            strlen(acc->description) + 1, 0);
+            (uint8_t *) accessory_params.description,
+            strlen(accessory_params.description) + 1, 0);
     if (ret < 0)
         goto error;
 
-    printf(" sending version: %s\n", acc->version);
-    ret = libusb_control_transfer(acc->handle,
+    printf(" sending version: %s\n", accessory_params.version);
+    ret = libusb_control_transfer(handle,
             LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
             AOA_SEND_IDENT, 0, AOA_STRING_VER_ID,
-            (uint8_t *) acc->version,
-            strlen(acc->version) + 1, 0);
+            (uint8_t *) accessory_params.version,
+            strlen(accessory_params.version) + 1, 0);
     if (ret < 0)
         goto error;
 
-    printf(" sending url: %s\n", acc->url);
-    ret = libusb_control_transfer(acc->handle,
+    printf(" sending url: %s\n", accessory_params.url);
+    ret = libusb_control_transfer(handle,
             LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
             AOA_SEND_IDENT, 0, AOA_STRING_URL_ID,
-            (uint8_t *) acc->url,
-            strlen(acc->url) + 1, 0);
+            (uint8_t *) accessory_params.url,
+            strlen(accessory_params.url) + 1, 0);
     if (ret < 0)
         goto error;
 
     printf(" sending serial number: %s\n", serial_str);
-    ret = libusb_control_transfer(acc->handle,
+    ret = libusb_control_transfer(handle,
             LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
             AOA_SEND_IDENT, 0, AOA_STRING_SER_ID,
             (uint8_t *) serial_str,
@@ -312,166 +208,27 @@ static int init_accessory(accessory_t *acc)
         goto error;
 
     printf("Turning the device in Accessory mode\n");
-    ret = libusb_control_transfer(acc->handle,
+    ret = libusb_control_transfer(handle,
             LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
             AOA_START_ACCESSORY, 0, 0, NULL, 0, 0);
     if (ret < 0)
         goto error;
 
-    puts("Accessory was inited");
+    puts("Accessory was inited successfully!");
 
 error:
     if (ret < 0) {
-        printf("Accessory init failed: %d\n", ret);
-
-        if (is_detached) {
-            libusb_attach_kernel_driver(acc->handle, AOA_ACCESSORY_INTERFACE);
-        }
+        fprintf(stderr, "Accessory init failed: %s\n", libusb_strerror(ret));
     }
 
-    return ret < 0 ? -1 : 0;
-}
-
-/* detached per-device working thread */
-static void *accessory_thread_proc(void *param)
-{
-    accessory_t *acc = param;
-    int ret = 0, transferred = 0;
-    uint8_t acc_buf[ACC_BUF_SIZE];
-    uint32_t acc_id = 0;
-
-    /* init accessory from new connected device and wait for present */
-    if (!is_accessory_present(acc)) {
-        init_accessory(acc);
-        goto end;
+    if (is_detached) {
+        libusb_attach_kernel_driver(handle, AOA_ACCESSORY_INTERFACE);
     }
 
-    puts("accessory connected!");
-
-    /* Claiming first (accessory) interface from the opened device */
-    ret = libusb_claim_interface(acc->handle, AOA_ACCESSORY_INTERFACE);
-    if (ret != 0) {
-        fprintf(stderr, "Error claiming interface: %s\n", libusb_strerror(ret));
-        goto end;
+    if (handle) {
+        libusb_close(handle);
     }
 
-    acc->is_running = true;
-
-    /* read first packet and map acc->id */
-    while (acc->is_running) {
-        ret = libusb_bulk_transfer(acc->handle, AOA_ACCESSORY_EP_IN,
-                acc_buf, sizeof(acc_buf), &transferred, ACC_TIMEOUT);
-        if (ret < 0) {
-            if (ret == LIBUSB_ERROR_TIMEOUT) {
-                continue;
-            } else {
-                fprintf(stderr, "Acc thread: bulk transfer error: %s\n",
-                        libusb_strerror(ret));
-                acc->is_running = false;
-                break;
-            }
-        } else {
-            if ((acc_id = get_acc_id_from_packet(acc_buf, transferred, false)) != 0) {
-                store_accessory_id(acc, acc_id);
-                /* stored, break this cycle */
-                break;
-            } else {
-                /* invalid packet, waiting next */
-                continue;
-            }
-        }
-    }
-
-    /* read rest packets */
-    while (acc->is_running) {
-        ret = libusb_bulk_transfer(acc->handle, AOA_ACCESSORY_EP_IN,
-                acc_buf, sizeof(acc_buf), &transferred, ACC_TIMEOUT);
-        if (ret < 0) {
-            if (ret == LIBUSB_ERROR_TIMEOUT) {
-                continue;
-            } else {
-                fprintf(stderr, "Acc thread: bulk transfer error: %s\n",
-                        libusb_strerror(ret));
-                break;
-            }
-        } else {
-            if (send_network_packet(acc_buf, transferred) < 0) {
-                fprintf(stderr, "Send network packet faield!\n");
-                break;
-            }
-        }
-    }
-
-end:
-    acc->is_running = false;
-    free_accessory(acc);
     return NULL;
-}
-
-void run_accessory_detached(accessory_t *acc)
-{
-    pthread_t th;
-    pthread_attr_t attrs;
-    pthread_attr_init(&attrs);
-    pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
-    pthread_create(&th, &attrs, accessory_thread_proc, acc);
-}
-
-/* FIXME: mutex */
-accessory_t *new_accessory(struct libusb_device *dev)
-{
-    accessory_t *acc = NULL;
-    struct libusb_device_descriptor desc;
-
-    libusb_get_device_descriptor(dev, &desc);
-
-    acc = malloc(sizeof(accessory_t));
-    *acc = acc_default;
-    acc->vid = desc.idVendor;
-    acc->pid = desc.idProduct;
-    acc->device = libusb_ref_device(dev);
-
-    return acc;
-}
-
-/* FIXME: mutex */
-void free_accessory(accessory_t *acc)
-{
-    if (!acc) {
-        return;
-    }
-
-    if (acc->id) {
-        release_accessory_id(acc->id);
-    }
-
-    if (acc->device) {
-        libusb_unref_device(acc->device);
-    }
-
-    if (acc->handle) {
-        printf("Closing USB device\n");
-        libusb_release_interface(acc->handle, 0);
-        libusb_close(acc->handle);
-    }
-
-    free(acc);
-}
-
-/* FIXME: mutex */
-int send_accessory_packet(void *data, size_t size, uint32_t acc_id)
-{
-    accessory_t *acc;
-
-    if ((acc = find_accessory_by_id(acc_id)) != NULL) {
-        /* FIXME: error handling */
-        int transferred;
-        libusb_bulk_transfer(acc->handle,
-                AOA_ACCESSORY_EP_OUT, data, size, &transferred, ACC_TIMEOUT);
-    } else {
-        /* accessory removed? */
-    }
-
-    return 0;
 }
 

@@ -16,19 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _LINUX_ADK_H_
-#define _LINUX_ADK_H_
+#ifndef _ACCESSORY_H_
+#define _ACCESSORY_H_
 
 #include <stdint.h>
 #include <libusb.h>
 
-#include "accessory.h"
+/* ACC params */
+#define ACC_TIMEOUT 200
+#define ACC_BUF_SIZE 4096
 
-/* Endpoint Addresses TODO get from interface descriptor */
-#define AOA_ACCESSORY_EP_IN         0x81
-#define AOA_ACCESSORY_EP_OUT        0x02
-#define AOA_ACCESSORY_INTERFACE     0x00
+#define ARRAY_SIZE(x) (sizeof((x)) / sizeof((x)[0]))
 
-accessory_t *probe_usb_device(struct libusb_device *dev, const char *serial_str);
+typedef struct accessory_t accessory_t;
 
-#endif /* _LINUX_ADK_H_ */
+accessory_t *new_accessory(struct libusb_device_handle *handle);
+void free_accessory(accessory_t *acc);
+int send_accessory_packet(void *data, size_t size, uint32_t acc_id);
+
+void run_usb_probe_thread_detached(struct libusb_device *dev);
+
+#endif
