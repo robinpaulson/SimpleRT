@@ -22,6 +22,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "accessory.h"
+
 typedef struct network_config_t {
     const char *interface;
     const char *nameserver;
@@ -29,10 +31,13 @@ typedef struct network_config_t {
 
 bool start_network(const network_config_t *config);
 void stop_network(void);
+
 ssize_t send_network_packet(const uint8_t *data, size_t size);
 
-uint32_t get_acc_id_from_packet(const uint8_t *data, size_t size, bool dst_addr);
+accessory_id_t get_acc_id_from_packet(const uint8_t *data,
+        size_t size, bool dst_addr);
 
-char *fill_serial_param(char *buf, size_t size, uint32_t acc_id);
+char *fill_serial_param(char *buf, size_t size,
+        accessory_id_t acc_id);
 
 #endif

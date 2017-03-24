@@ -25,7 +25,6 @@
 #include <arpa/inet.h>
 
 #include "network.h"
-#include "accessory.h"
 #include "utils.h"
 
 #ifndef IFNAMSIZ
@@ -66,7 +65,7 @@ static inline void dump_addr_info(uint32_t addr, ssize_t size)
             addr & 0xff);
 }
 
-uint32_t get_acc_id_from_packet(const uint8_t *data, size_t size, bool dst_addr)
+accessory_id_t get_acc_id_from_packet(const uint8_t *data, size_t size, bool dst_addr)
 {
     uint32_t addr;
     unsigned int addr_offset = (dst_addr ? 16 : 12);
@@ -96,12 +95,12 @@ static void *tun_thread_proc(void *arg)
 {
     ssize_t nread;
     uint8_t acc_buf[ACC_BUF_SIZE];
-    uint32_t acc_id = 0;
+    accessory_id_t id = 0;
 
     while (g_tun_is_running) {
         if ((nread = read(g_tun_fd, acc_buf, sizeof(acc_buf))) > 0) {
-            if ((acc_id = get_acc_id_from_packet(acc_buf, nread, true)) != 0) {
-                send_accessory_packet(acc_buf, nread, acc_id);
+            if ((id = get_acc_id_from_packet(acc_buf, nread, true)) != 0) {
+                send_accessory_packet(acc_buf, nread, id);
             } else {
                 /* invalid packet received, ignore */
             }
@@ -218,9 +217,9 @@ ssize_t send_network_packet(const uint8_t *data, size_t size)
     return nwrite;
 }
 
-char *fill_serial_param(char *buf, size_t size, uint32_t acc_id)
+char *fill_serial_param(char *buf, size_t size, accessory_id_t id)
 {
-    uint32_t addr = htonl(SIMPLERT_NETWORK_ADDRESS | acc_id);
+    uint32_t addr = htonl(SIMPLERT_NETWORK_ADDRESS | id);
     snprintf(buf, size, "%s,%s",
             inet_ntoa(*(struct in_addr *) &addr),
             g_network_config->nameserver);

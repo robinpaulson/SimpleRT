@@ -22,11 +22,14 @@
 #include <stdint.h>
 #include <libusb.h>
 
+typedef uint32_t accessory_id_t;
 typedef struct accessory_t accessory_t;
 
 accessory_t *new_accessory(struct libusb_device_handle *handle);
 void free_accessory(accessory_t *acc);
-int send_accessory_packet(void *data, size_t size, uint32_t acc_id);
+
+int send_accessory_packet(const uint8_t *data, size_t size,
+        accessory_id_t id);
 
 void run_usb_probe_thread_detached(struct libusb_device *dev);
 

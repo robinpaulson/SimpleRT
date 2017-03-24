@@ -29,7 +29,7 @@
 #include "utils.h"
 
 typedef struct accessory_t {
-    uint32_t id;
+    accessory_id_t id;
     /* FIXME: atomic needed */
     volatile int is_running;
     struct libusb_device_handle *handle;
@@ -44,16 +44,16 @@ static accessory_t *acc_list[256] = {
     [255]   = &acc_reserved,    /* reserved, broadcast addr */
 };
 
-static bool is_accessory_id_valid(uint32_t acc_id)
+static bool is_accessory_id_valid(accessory_id_t id)
 {
-    if (!acc_id || acc_id >= ARRAY_SIZE(acc_list)) {
+    if (!id || id >= ARRAY_SIZE(acc_list)) {
         return false;
     }
 
     return true;
 }
 
-static uint32_t acquire_accessory_id(void)
+static accessory_id_t acquire_accessory_id(void)
 {
     for (uint32_t i = 0; i < ARRAY_SIZE(acc_list); i++) {
         if (acc_list[i] == NULL) {
@@ -65,39 +65,39 @@ static uint32_t acquire_accessory_id(void)
     return 0;
 }
 
-static void release_accessory_id(uint32_t acc_id)
+static void release_accessory_id(accessory_id_t id)
 {
-    if (!is_accessory_id_valid(acc_id)) {
+    if (!is_accessory_id_valid(id)) {
         return;
     }
 
-    acc_list[acc_id] = NULL;
+    acc_list[id] = NULL;
 }
 
-static bool store_accessory_id(accessory_t *acc, uint32_t acc_id)
+static bool store_accessory_id(accessory_t *acc, accessory_id_t id)
 {
-    if (!acc || !is_accessory_id_valid(acc_id)) {
+    if (!acc || !is_accessory_id_valid(id)) {
         return false;
     }
 
-    acc->id = acc_id;
+    acc->id = id;
     acc_list[acc->id] = acc;
     return true;
 }
 
-static accessory_t *find_accessory_by_id(uint32_t acc_id)
+static accessory_t *find_accessory_by_id(accessory_id_t id)
 {
-    if (!is_accessory_id_valid(acc_id)) {
+    if (!is_accessory_id_valid(id)) {
         return NULL;
     }
 
-    return acc_list[acc_id];
+    return acc_list[id];
 }
 
 static void accessory_worker_proc(accessory_t *acc)
 {
     uint8_t acc_buf[ACC_BUF_SIZE];
-    uint32_t acc_id = 0;
+    accessory_id_t id = 0;
     ssize_t nread;
 
     puts("accessory connected!");
@@ -107,8 +107,8 @@ static void accessory_worker_proc(accessory_t *acc)
     /* read first packet and map acc->id */
     while (acc->is_running) {
         if ((nread = read_usb_packet(acc->handle, acc_buf, sizeof(acc_buf))) > 0) {
-            if ((acc_id = get_acc_id_from_packet(acc_buf, nread, false)) != 0) {
-                store_accessory_id(acc, acc_id);
+            if ((id = get_acc_id_from_packet(acc_buf, nread, false)) != 0) {
+                store_accessory_id(acc, id);
                 break;
             }
         } else if (nread < 0) {
@@ -170,11 +170,12 @@ void free_accessory(accessory_t *acc)
 }
 
 /* FIXME: mutex */
-int send_accessory_packet(void *data, size_t size, uint32_t acc_id)
+int send_accessory_packet(const uint8_t *data, size_t size,
+        accessory_id_t id)
 {
     accessory_t *acc;
 
-    if ((acc = find_accessory_by_id(acc_id)) != NULL) {
+    if ((acc = find_accessory_by_id(id)) != NULL) {
         if (write_usb_packet(acc->handle, data, size) < 0) {
             /* seems like accessory removed, just ignore */
         }
@@ -189,16 +190,15 @@ static void *usb_device_thread_proc(void *param)
 {
     struct libusb_device *dev = param;
     accessory_t *acc;
-    int acc_id;
+    accessory_id_t id;
     char serial[128] = { 0 };
 
-    acc_id = acquire_accessory_id();
-    if (acc_id == 0) {
+    if ((id = acquire_accessory_id()) == 0) {
         fprintf(stderr, "No free accessory id's left\n");
         goto end;
     }
 
-    fill_serial_param(serial, sizeof(serial), acc_id);
+    fill_serial_param(serial, sizeof(serial), id);
 
     acc = probe_usb_device(dev, serial);
     if (acc == NULL) {
