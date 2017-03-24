@@ -35,29 +35,25 @@ typedef struct accessory_t {
     struct libusb_device_handle *handle;
 } accessory_t;
 
-static accessory_t acc_reserved;
-
-/* acc list for 255.255.255.0 network mask */
-static accessory_t *acc_list[256] = {
-    [0]     = &acc_reserved,    /* reserved, network addr   */
-    [1]     = &acc_reserved,    /* reserved, host addr      */
-    [255]   = &acc_reserved,    /* reserved, broadcast addr */
+static struct {
+    bool used;
+    accessory_t *acc;
+} acc_list[256] = {
+    [0]     =   { .used = true }, /* reserved, network addr   */
+    [1]     =   { .used = true }, /* reserved, host addr      */
+    [255]   =   { .used = true }, /* reserved, broadcast addr */
 };
 
 static bool is_accessory_id_valid(accessory_id_t id)
 {
-    if (!id || id >= ARRAY_SIZE(acc_list)) {
-        return false;
-    }
-
-    return true;
+    return id && id < ARRAY_SIZE(acc_list);
 }
 
 static accessory_id_t acquire_accessory_id(void)
 {
     for (uint32_t i = 0; i < ARRAY_SIZE(acc_list); i++) {
-        if (acc_list[i] == NULL) {
-            /* free id found */
+        if (!acc_list[i].used) {
+            acc_list[i].used = true;
             return i;
         }
     }
@@ -71,7 +67,8 @@ static void release_accessory_id(accessory_id_t id)
         return;
     }
 
-    acc_list[id] = NULL;
+    acc_list[id].acc = NULL;
+    acc_list[id].used = false;
 }
 
 static bool store_accessory_id(accessory_t *acc, accessory_id_t id)
@@ -81,7 +78,7 @@ static bool store_accessory_id(accessory_t *acc, accessory_id_t id)
     }
 
     acc->id = id;
-    acc_list[acc->id] = acc;
+    acc_list[acc->id].acc = acc;
     return true;
 }
 
@@ -91,7 +88,7 @@ static accessory_t *find_accessory_by_id(accessory_id_t id)
         return NULL;
     }
 
-    return acc_list[id];
+    return acc_list[id].acc;
 }
 
 static void accessory_worker_proc(accessory_t *acc)
