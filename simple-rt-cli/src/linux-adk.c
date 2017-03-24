@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 
+#include "utils.h"
 #include "linux-adk.h"
 
 /* Android Open Accessory protocol defines */
@@ -49,6 +50,14 @@
 #define AOA_AUDIO_ADB_PID           0x2D03	/* audio + adb */
 #define AOA_ACCESSORY_AUDIO_PID     0x2D04	/* accessory + audio */
 #define AOA_ACCESSORY_AUDIO_ADB_PID 0x2D05	/* accessory + audio + adb */
+
+/* Endpoint Addresses TODO get from interface descriptor */
+#define AOA_ACCESSORY_EP_IN         0x81
+#define AOA_ACCESSORY_EP_OUT        0x02
+#define AOA_ACCESSORY_INTERFACE     0x00
+
+/* ACC params */
+#define ACC_TIMEOUT 200
 
 static const struct {
     const char *manufacturer;
@@ -89,7 +98,8 @@ static bool is_accessory_present(struct libusb_device *dev)
     return false;
 }
 
-accessory_t *probe_usb_device(struct libusb_device *dev, const char *serial_str)
+accessory_t *probe_usb_device(struct libusb_device *dev,
+        const char *serial_str)
 {
     int ret = 0;
     int is_detached = 0;
@@ -230,5 +240,57 @@ error:
     }
 
     return NULL;
+}
+
+ssize_t read_usb_packet(struct libusb_device_handle *handle,
+        uint8_t *data, size_t size)
+{
+    int ret;
+    int transferred;
+
+    while (true) {
+        ret = libusb_bulk_transfer(handle, AOA_ACCESSORY_EP_IN,
+                data, size, &transferred, ACC_TIMEOUT);
+        if (ret < 0) {
+            if (ret == LIBUSB_ERROR_TIMEOUT) {
+                continue;
+            } else {
+                fprintf(stderr, "read_usb_packet failed: %s\n",
+                        libusb_strerror(ret));
+                return -1;
+            }
+        } else {
+            /* success */
+            break;
+        }
+    }
+
+    return transferred;
+}
+
+ssize_t write_usb_packet(struct libusb_device_handle *handle,
+        uint8_t *data, size_t size)
+{
+    int ret;
+    int transferred;
+
+    while (true) {
+        ret = libusb_bulk_transfer(handle, AOA_ACCESSORY_EP_OUT,
+                data, size, &transferred, ACC_TIMEOUT);
+        if (ret < 0) {
+            if (ret == LIBUSB_ERROR_TIMEOUT) {
+                continue;
+            } else {
+                fprintf(stderr, "write_usb_packet failed: %s\n",
+                        libusb_strerror(ret));
+                return -1;
+            }
+        } else {
+            /* success */
+            break;
+        }
+    }
+
+    return transferred;
 }
 

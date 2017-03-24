@@ -16,21 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _LINUX_ADK_H_
-#define _LINUX_ADK_H_
+#ifndef _UTILS_H_
+#define _UTILS_H_
 
-#include <stdint.h>
-#include <libusb.h>
+#define ACC_BUF_SIZE 4096
 
-#include "accessory.h"
+#define ARRAY_SIZE(x) (sizeof((x)) / sizeof((x)[0]))
 
-accessory_t *probe_usb_device(struct libusb_device *dev,
-        const char *serial_str);
-
-ssize_t read_usb_packet(struct libusb_device_handle *handle,
-        uint8_t *data, size_t size);
-
-ssize_t write_usb_packet(struct libusb_device_handle *handle,
-        uint8_t *data, size_t size);
-
-#endif /* _LINUX_ADK_H_ */
+#endif

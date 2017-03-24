@@ -22,12 +22,6 @@
 #include <stdint.h>
 #include <libusb.h>
 
-/* ACC params */
-#define ACC_TIMEOUT 200
-#define ACC_BUF_SIZE 4096
-
-#define ARRAY_SIZE(x) (sizeof((x)) / sizeof((x)[0]))
-
 typedef struct accessory_t accessory_t;
 
 accessory_t *new_accessory(struct libusb_device_handle *handle);

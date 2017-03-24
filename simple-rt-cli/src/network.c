@@ -25,7 +25,8 @@
 #include <arpa/inet.h>
 
 #include "network.h"
-#include "linux-adk.h"
+#include "accessory.h"
+#include "utils.h"
 
 #ifndef IFNAMSIZ
 #define IFNAMSIZ 16

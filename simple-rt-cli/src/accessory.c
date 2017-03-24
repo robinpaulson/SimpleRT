@@ -26,6 +26,7 @@
 #include "accessory.h"
 #include "linux-adk.h"
 #include "network.h"
+#include "utils.h"
 
 typedef struct accessory_t {
     uint32_t id;
@@ -95,9 +96,9 @@ static accessory_t *find_accessory_by_id(uint32_t acc_id)
 
 static void accessory_worker_proc(accessory_t *acc)
 {
-    int ret = 0, transferred = 0;
     uint8_t acc_buf[ACC_BUF_SIZE];
     uint32_t acc_id = 0;
+    ssize_t nread;
 
     puts("accessory connected!");
 
@@ -105,49 +106,32 @@ static void accessory_worker_proc(accessory_t *acc)
 
     /* read first packet and map acc->id */
     while (acc->is_running) {
-        ret = libusb_bulk_transfer(acc->handle, AOA_ACCESSORY_EP_IN,
-                acc_buf, sizeof(acc_buf), &transferred, ACC_TIMEOUT);
-        if (ret < 0) {
-            if (ret == LIBUSB_ERROR_TIMEOUT) {
-                continue;
-            } else {
-                fprintf(stderr, "Acc thread: bulk transfer error: %s\n",
-                        libusb_strerror(ret));
-                acc->is_running = false;
-                break;
-            }
-        } else {
-            if ((acc_id = get_acc_id_from_packet(acc_buf, transferred, false)) != 0) {
+        if ((nread = read_usb_packet(acc->handle, acc_buf, sizeof(acc_buf))) > 0) {
+            if ((acc_id = get_acc_id_from_packet(acc_buf, nread, false)) != 0) {
                 store_accessory_id(acc, acc_id);
-                /* stored, break this cycle */
                 break;
-            } else {
-                /* invalid packet, waiting next */
-                continue;
             }
+        } else if (nread < 0) {
+            goto end;
+        } else {
+            continue;
         }
     }
 
     /* read rest packets */
     while (acc->is_running) {
-        ret = libusb_bulk_transfer(acc->handle, AOA_ACCESSORY_EP_IN,
-                acc_buf, sizeof(acc_buf), &transferred, ACC_TIMEOUT);
-        if (ret < 0) {
-            if (ret == LIBUSB_ERROR_TIMEOUT) {
-                continue;
-            } else {
-                fprintf(stderr, "Acc thread: bulk transfer error: %s\n",
-                        libusb_strerror(ret));
+        if ((nread = read_usb_packet(acc->handle, acc_buf, sizeof(acc_buf))) > 0) {
+            if (send_network_packet(acc_buf, nread) < 0) {
                 break;
             }
+        } else if (nread < 0) {
+            break;
         } else {
-            if (send_network_packet(acc_buf, transferred) < 0) {
-                fprintf(stderr, "Send network packet faield!\n");
-                break;
-            }
+            continue;
         }
     }
 
+end:
     acc->is_running = false;
     free_accessory(acc);
 }
@@ -191,12 +175,11 @@ int send_accessory_packet(void *data, size_t size, uint32_t acc_id)
     accessory_t *acc;
 
     if ((acc = find_accessory_by_id(acc_id)) != NULL) {
-        /* FIXME: error handling */
-        int transferred;
-        libusb_bulk_transfer(acc->handle,
-                AOA_ACCESSORY_EP_OUT, data, size, &transferred, ACC_TIMEOUT);
+        if (write_usb_packet(acc->handle, data, size) < 0) {
+            /* seems like accessory removed, just ignore */
+        }
     } else {
-        /* accessory removed? */
+        /* accessory not found, removed? */
     }
 
     return 0;
