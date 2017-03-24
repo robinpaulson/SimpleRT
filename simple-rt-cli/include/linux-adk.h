@@ -31,6 +31,6 @@ ssize_t read_usb_packet(struct libusb_device_handle *handle,
         uint8_t *data, size_t size);
 
 ssize_t write_usb_packet(struct libusb_device_handle *handle,
-        uint8_t *data, size_t size);
+        const uint8_t *data, size_t size);
 
 #endif /* _LINUX_ADK_H_ */

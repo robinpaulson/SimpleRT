@@ -29,7 +29,7 @@ typedef struct network_config_t {
 
 bool start_network(const network_config_t *config);
 void stop_network(void);
-int send_network_packet(void *data, size_t size);
+ssize_t send_network_packet(const uint8_t *data, size_t size);
 
 uint32_t get_acc_id_from_packet(const uint8_t *data, size_t size, bool dst_addr);
 

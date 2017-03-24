@@ -242,6 +242,7 @@ error:
     return NULL;
 }
 
+/* FIXME: read_all semantic */
 ssize_t read_usb_packet(struct libusb_device_handle *handle,
         uint8_t *data, size_t size)
 {
@@ -268,15 +269,16 @@ ssize_t read_usb_packet(struct libusb_device_handle *handle,
     return transferred;
 }
 
+/* FIXME: write_all semantic */
 ssize_t write_usb_packet(struct libusb_device_handle *handle,
-        uint8_t *data, size_t size)
+        const uint8_t *data, size_t size)
 {
     int ret;
     int transferred;
 
     while (true) {
         ret = libusb_bulk_transfer(handle, AOA_ACCESSORY_EP_OUT,
-                data, size, &transferred, ACC_TIMEOUT);
+                (uint8_t *) data, size, &transferred, ACC_TIMEOUT);
         if (ret < 0) {
             if (ret == LIBUSB_ERROR_TIMEOUT) {
                 continue;

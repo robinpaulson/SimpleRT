@@ -204,17 +204,18 @@ void stop_network(void)
     }
 }
 
-int send_network_packet(void *data, size_t size)
+ssize_t send_network_packet(const uint8_t *data, size_t size)
 {
     ssize_t nwrite;
 
     nwrite = write(g_tun_fd, data, size);
     if (nwrite < 0) {
-        fprintf(stderr, "Error writing into tun: %s\n", strerror(errno));
+        fprintf(stderr, "Error writing into tun: %s\n",
+                strerror(errno));
         return -1;
     }
 
-    return 0;
+    return nwrite;
 }
 
 char *fill_serial_param(char *buf, size_t size, uint32_t acc_id)
