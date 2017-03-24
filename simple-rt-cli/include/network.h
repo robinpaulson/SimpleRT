@@ -22,9 +22,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define DEFAULT_INTERFACE "eth0"
-#define DEFAULT_NAMESERVER "8.8.8.8"
-
 typedef struct network_config_t {
     const char *interface;
     const char *nameserver;
@@ -37,6 +34,5 @@ int send_network_packet(void *data, size_t size);
 uint32_t get_acc_id_from_packet(const uint8_t *data, size_t size, bool dst_addr);
 
 char *fill_serial_param(char *buf, size_t size, uint32_t acc_id);
-extern char *get_system_nameserver(void);
 
 #endif

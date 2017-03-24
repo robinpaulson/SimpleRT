@@ -21,9 +21,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <libusb.h>
 
-#include "linux-adk.h"
+#include "accessory.h"
 #include "network.h"
+#include "utils.h"
 
 static int hotplug_callback(struct libusb_context *ctx,
         struct libusb_device *dev,

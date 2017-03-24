@@ -31,7 +31,7 @@
 #include <arpa/nameser.h>
 #include <resolv.h>
 
-#include "network.h"
+#include "utils.h"
 
 static const char clonedev[] = "/dev/net/tun";
 
@@ -64,7 +64,7 @@ int tun_alloc(char *dev)
     return fd;
 }
 
-char *get_system_nameserver(void)
+const char *get_system_nameserver(void)
 {
     struct __res_state rs;
     static char buf[128];
