@@ -7,7 +7,9 @@ Development is still in progress, bugs and errors can occur.
 
 ### No root, no adb required!
 
-## Multi-tethering version supports only Linux host, OSX is in progress.
+## This is multi-tethering version. Allows to connect several android devices to one Linux (only linux supports at this time) host into one virtual network!
+
+### Multi-tethering version supports only Linux host, OSX is in progress.
 
 - Android part:
 
