@@ -44,6 +44,8 @@ static struct {
     [255]   =   { .used = true }, /* reserved, broadcast addr */
 };
 
+static pthread_rwlock_t acc_list_lock = PTHREAD_RWLOCK_INITIALIZER;
+
 static bool is_accessory_id_valid(accessory_id_t id)
 {
     return id && id < ARRAY_SIZE(acc_list);
@@ -51,14 +53,21 @@ static bool is_accessory_id_valid(accessory_id_t id)
 
 static accessory_id_t acquire_accessory_id(void)
 {
+    accessory_id_t ret = 0;
+
+    pthread_rwlock_wrlock(&acc_list_lock);
+
     for (uint32_t i = 0; i < ARRAY_SIZE(acc_list); i++) {
         if (!acc_list[i].used) {
             acc_list[i].used = true;
-            return i;
+            ret = i;
+            break;
         }
     }
 
-    return 0;
+    pthread_rwlock_unlock(&acc_list_lock);
+
+    return ret;
 }
 
 static void release_accessory_id(accessory_id_t id)
@@ -67,8 +76,12 @@ static void release_accessory_id(accessory_id_t id)
         return;
     }
 
+    pthread_rwlock_wrlock(&acc_list_lock);
+
     acc_list[id].acc = NULL;
     acc_list[id].used = false;
+
+    pthread_rwlock_unlock(&acc_list_lock);
 }
 
 static bool store_accessory_id(accessory_t *acc, accessory_id_t id)
@@ -77,18 +90,31 @@ static bool store_accessory_id(accessory_t *acc, accessory_id_t id)
         return false;
     }
 
+    pthread_rwlock_wrlock(&acc_list_lock);
+
     acc->id = id;
     acc_list[acc->id].acc = acc;
+
+    pthread_rwlock_unlock(&acc_list_lock);
+
     return true;
 }
 
 static accessory_t *find_accessory_by_id(accessory_id_t id)
 {
+    accessory_t *ret;
+
     if (!is_accessory_id_valid(id)) {
         return NULL;
     }
 
-    return acc_list[id].acc;
+    pthread_rwlock_rdlock(&acc_list_lock);
+
+    ret = acc_list[id].acc;
+
+    pthread_rwlock_unlock(&acc_list_lock);
+
+    return ret;
 }
 
 static void accessory_worker_proc(accessory_t *acc)
@@ -133,7 +159,6 @@ end:
     free_accessory(acc);
 }
 
-/* FIXME: mutex */
 accessory_t *new_accessory(struct libusb_device_handle *handle)
 {
     accessory_t *acc = NULL;
@@ -146,7 +171,6 @@ accessory_t *new_accessory(struct libusb_device_handle *handle)
     return acc;
 }
 
-/* FIXME: mutex */
 void free_accessory(accessory_t *acc)
 {
     if (!acc) {
@@ -166,7 +190,6 @@ void free_accessory(accessory_t *acc)
     free(acc);
 }
 
-/* FIXME: mutex */
 int send_accessory_packet(const uint8_t *data, size_t size,
         accessory_id_t id)
 {
