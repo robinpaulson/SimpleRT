@@ -59,20 +59,6 @@
 /* ACC params */
 #define ACC_TIMEOUT 200
 
-static const struct {
-    const char *manufacturer;
-    const char *model;
-    const char *description;
-    const char *version;
-    const char *url;
-} accessory_params = {
-    .manufacturer = "Konstantin Menyaev",
-    .model = "SimpleRT",
-    .description = "Simple Reverse Tethering",
-    .version = "1.0",
-    .url = "https://github.com/vvviperrr/SimpleRT",
-};
-
 static bool is_accessory_present(struct libusb_device *dev)
 {
     static const uint16_t aoa_pids[] = {
@@ -160,69 +146,86 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
     /* Some Android devices require a waiting period between transfer calls */
     usleep(10000);
 
+    struct acc_control_params_t {
+        const char *str;
+        uint8_t request_type;
+        uint8_t bRequest;
+        uint16_t wValue;
+        uint16_t wIndex;
+        const char *data;
+        uint32_t timeout;
+    } acc_control_params[] = {
+        {
+            .str = "manufacturer",
+            .request_type = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
+            .bRequest = AOA_SEND_IDENT,
+            .wIndex = AOA_STRING_MAN_ID,
+            .data = "Konstantin Menyaev",
+        },
+        {
+            .str = "model",
+            .request_type = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
+            .bRequest = AOA_SEND_IDENT,
+            .wIndex = AOA_STRING_MOD_ID,
+            .data = "SimpleRT",
+        },
+        {
+            .str = "description",
+            .request_type = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
+            .bRequest = AOA_SEND_IDENT,
+            .wIndex = AOA_STRING_DSC_ID,
+            .data = "Simple Reverse Tethering",
+        },
+        {
+            .str = "version",
+            .request_type = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
+            .bRequest = AOA_SEND_IDENT,
+            .wIndex = AOA_STRING_VER_ID,
+            .data = "1.0",
+        },
+        {
+            .str = "url",
+            .request_type = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
+            .bRequest = AOA_SEND_IDENT,
+            .wIndex = AOA_STRING_URL_ID,
+            .data = "https://github.com/vvviperrr/SimpleRT",
+        },
+        {
+            .str = "serial number",
+            .request_type = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
+            .bRequest = AOA_SEND_IDENT,
+            .wIndex = AOA_STRING_SER_ID,
+            .data = serial_str,
+        },
+        {
+            .str = "command",
+            .request_type = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
+            .bRequest = AOA_START_ACCESSORY,
+        },
+        { NULL, 0, 0, 0, 0, NULL, 0 },
+    };
+
     printf("Sending identification to the device\n");
+    for (struct acc_control_params_t *acp = acc_control_params;
+            acp->str != NULL; acp++)
+    {
+        const char *data = acp->data ? acp->data : "start accessory";
+        uint16_t data_len = acp->data ? strlen(acp->data) + 1 : 0;
 
-    printf(" sending manufacturer: %s\n", accessory_params.manufacturer);
-    ret = libusb_control_transfer(handle,
-            LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
-            AOA_SEND_IDENT, 0, AOA_STRING_MAN_ID,
-            (uint8_t *) accessory_params.manufacturer,
-            strlen(accessory_params.manufacturer) + 1, 0);
-    if (ret < 0)
-        goto error;
+        printf(" sending %s: %s\n", acp->str, data);
 
-    printf(" sending model: %s\n", accessory_params.model);
-    ret = libusb_control_transfer(handle,
-            LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
-            AOA_SEND_IDENT, 0,
-            AOA_STRING_MOD_ID,
-            (uint8_t *) accessory_params.model,
-            strlen(accessory_params.model) + 1, 0);
-    if (ret < 0)
-        goto error;
-
-    printf(" sending description: %s\n", accessory_params.description);
-    ret = libusb_control_transfer(handle,
-            LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
-            AOA_SEND_IDENT, 0, AOA_STRING_DSC_ID,
-            (uint8_t *) accessory_params.description,
-            strlen(accessory_params.description) + 1, 0);
-    if (ret < 0)
-        goto error;
-
-    printf(" sending version: %s\n", accessory_params.version);
-    ret = libusb_control_transfer(handle,
-            LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
-            AOA_SEND_IDENT, 0, AOA_STRING_VER_ID,
-            (uint8_t *) accessory_params.version,
-            strlen(accessory_params.version) + 1, 0);
-    if (ret < 0)
-        goto error;
-
-    printf(" sending url: %s\n", accessory_params.url);
-    ret = libusb_control_transfer(handle,
-            LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
-            AOA_SEND_IDENT, 0, AOA_STRING_URL_ID,
-            (uint8_t *) accessory_params.url,
-            strlen(accessory_params.url) + 1, 0);
-    if (ret < 0)
-        goto error;
-
-    printf(" sending serial number: %s\n", serial_str);
-    ret = libusb_control_transfer(handle,
-            LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
-            AOA_SEND_IDENT, 0, AOA_STRING_SER_ID,
-            (uint8_t *) serial_str,
-            strlen(serial_str) + 1, 0);
-    if (ret < 0)
-        goto error;
-
-    printf("Turning the device in Accessory mode\n");
-    ret = libusb_control_transfer(handle,
-            LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
-            AOA_START_ACCESSORY, 0, 0, NULL, 0, 0);
-    if (ret < 0)
-        goto error;
+        ret = libusb_control_transfer(handle,
+                acp->request_type,
+                acp->bRequest,
+                acp->wValue,
+                acp->wIndex,
+                (uint8_t *) acp->data,
+                data_len,
+                acp->timeout);
+        if (ret < 0) {
+            goto error;
+        }
+    }
 
     puts("Accessory was inited successfully!");
 
