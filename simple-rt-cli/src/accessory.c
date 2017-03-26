@@ -30,8 +30,7 @@
 
 typedef struct accessory_t {
     accessory_id_t id;
-    /* FIXME: atomic needed */
-    volatile int is_running;
+    volatile bool is_running;
     struct libusb_device_handle *handle;
 } accessory_t;
 
@@ -206,22 +205,26 @@ int send_accessory_packet(const uint8_t *data, size_t size,
     return 0;
 }
 
-static void *usb_device_thread_proc(void *param)
+accessory_id_t gen_new_serial_string(char *str, size_t size)
 {
-    struct libusb_device *dev = param;
-    accessory_t *acc;
     accessory_id_t id;
-    char serial[128] = { 0 };
 
     if ((id = acquire_accessory_id()) == 0) {
         fprintf(stderr, "No free accessory id's left\n");
-        goto end;
+        return 0;
     }
 
-    fill_serial_param(serial, sizeof(serial), id);
+    fill_serial_param(str, size, id);
 
-    acc = probe_usb_device(dev, serial);
-    if (acc == NULL) {
+    return id;
+}
+
+static void *usb_device_thread_proc(void *param)
+{
+    accessory_t *acc;
+    struct libusb_device *dev = param;
+
+    if ((acc = probe_usb_device(dev, gen_new_serial_string)) == NULL) {
         goto end;
     }
 
@@ -240,3 +243,4 @@ void run_usb_probe_thread_detached(struct libusb_device *dev)
     pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
     pthread_create(&th, &attrs, usb_device_thread_proc, dev);
 }
+

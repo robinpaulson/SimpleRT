@@ -24,8 +24,10 @@
 
 #include "accessory.h"
 
+typedef accessory_id_t (*gen_new_serial_str_cb)(char *str, size_t size);
+
 accessory_t *probe_usb_device(struct libusb_device *dev,
-        const char *serial_str);
+        gen_new_serial_str_cb gen_new_serial_str);
 
 ssize_t read_usb_packet(struct libusb_device_handle *handle,
         uint8_t *data, size_t size);

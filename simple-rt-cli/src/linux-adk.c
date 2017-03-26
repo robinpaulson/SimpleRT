@@ -85,11 +85,12 @@ static bool is_accessory_present(struct libusb_device *dev)
 }
 
 accessory_t *probe_usb_device(struct libusb_device *dev,
-        const char *serial_str)
+        gen_new_serial_str_cb gen_new_serial_str)
 {
     int ret = 0;
     int is_detached = 0;
     uint16_t aoa_version = 0;
+    char serial_str[128] = { 0 };
 
     struct libusb_device_handle *handle = NULL;
 
@@ -145,6 +146,11 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
 
     /* Some Android devices require a waiting period between transfer calls */
     usleep(10000);
+
+    if (gen_new_serial_str(serial_str, sizeof(serial_str)) == 0) {
+        ret = 0;
+        goto error;
+    }
 
     struct acc_control_params_t {
         const char *str;

@@ -33,4 +33,6 @@ int send_accessory_packet(const uint8_t *data, size_t size,
 
 void run_usb_probe_thread_detached(struct libusb_device *dev);
 
+accessory_id_t gen_new_serial_string(char *str, size_t size);
+
 #endif

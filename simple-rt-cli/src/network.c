@@ -97,6 +97,8 @@ static void *tun_thread_proc(void *arg)
     uint8_t acc_buf[ACC_BUF_SIZE];
     accessory_id_t id = 0;
 
+    g_tun_is_running = true;
+
     while (g_tun_is_running) {
         if ((nread = read(g_tun_fd, acc_buf, sizeof(acc_buf))) > 0) {
             if ((id = get_acc_id_from_packet(acc_buf, nread, true)) != 0) {
@@ -114,6 +116,7 @@ static void *tun_thread_proc(void *arg)
     }
 
     g_tun_is_running = false;
+
     return NULL;
 }
 
@@ -180,7 +183,6 @@ bool start_network(const network_config_t *config)
     g_tun_fd = tun_fd;
     printf("%s interface configured!\n", tun_name);
 
-    g_tun_is_running = 1;
     pthread_create(&g_tun_thread, NULL, tun_thread_proc, NULL);
 
     return true;
@@ -188,7 +190,7 @@ bool start_network(const network_config_t *config)
 
 void stop_network(void)
 {
-    g_tun_is_running = 0;
+    g_tun_is_running = false;
     g_network_config = NULL;
 
     if (g_tun_thread) {
