@@ -47,13 +47,15 @@
 #define ACC_ID_FROM_ADDR(addr) \
     ((addr) & 0xff)
 
+/* minimum 2*/
+#define MAX_TUN_FDS 5
 #define IFACE_UP_SH_PATH "./iface_up.sh"
 
-extern int tun_alloc(char *dev);
+extern int tun_alloc(char *dev, int *fds, size_t count);
 extern bool is_tun_present(void);
 
-static int g_tun_fd = 0;
-static pthread_t g_tun_thread = 0;
+static int g_tun_fds[MAX_TUN_FDS] = { 0 };
+static pthread_t g_tun_threads[MAX_TUN_FDS - 1] = { 0 };
 static volatile int g_tun_is_running = 0;
 static const network_config_t *g_network_config;
 
@@ -93,6 +95,7 @@ end:
 
 static void *tun_thread_proc(void *arg)
 {
+	int tun_fd = *((int *) arg);
     ssize_t nread;
     uint8_t acc_buf[ACC_BUF_SIZE];
     accessory_id_t id = 0;
@@ -100,7 +103,8 @@ static void *tun_thread_proc(void *arg)
     g_tun_is_running = true;
 
     while (g_tun_is_running) {
-        if ((nread = read(g_tun_fd, acc_buf, sizeof(acc_buf))) > 0) {
+        if ((nread = read(tun_fd, acc_buf, sizeof(acc_buf))) > 0) {
+			printf("read from %d\n", tun_fd);
             if ((id = get_acc_id_from_packet(acc_buf, nread, true)) != 0) {
                 send_accessory_packet(acc_buf, nread, id);
             } else {
@@ -147,7 +151,6 @@ static bool iface_up(const char *dev)
 
 bool start_network(const network_config_t *config)
 {
-    int tun_fd = 0;
     char tun_name[IFNAMSIZ] = { 0 };
 
     if (!config) {
@@ -169,21 +172,22 @@ bool start_network(const network_config_t *config)
         return false;
     }
 
-    if ((tun_fd = tun_alloc(tun_name)) < 0) {
+    if (tun_alloc(tun_name, g_tun_fds, MAX_TUN_FDS) < 0) {
         perror("tun_alloc failed");
         return false;
     }
 
     if (!iface_up(tun_name)) {
         fprintf(stderr, "Unable set iface %s up\n", tun_name);
-        close(tun_fd);
+		stop_network();
         return false;
     }
 
-    g_tun_fd = tun_fd;
     printf("%s interface configured!\n", tun_name);
 
-    pthread_create(&g_tun_thread, NULL, tun_thread_proc, NULL);
+	for (size_t i = 0; i < ARRAY_SIZE(g_tun_threads); i++) {
+		pthread_create(&g_tun_threads[i], NULL, tun_thread_proc, &g_tun_fds[i + 1]);
+	}
 
     return true;
 }
@@ -193,23 +197,29 @@ void stop_network(void)
     g_tun_is_running = false;
     g_network_config = NULL;
 
-    if (g_tun_thread) {
-        puts("stopping network");
-        pthread_join(g_tun_thread, NULL);
-        g_tun_thread = 0;
-    }
+	puts("stopping network");
 
-    if (g_tun_fd) {
-        close(g_tun_fd);
-        g_tun_fd = 0;
-    }
+	for (size_t i = 0; i < ARRAY_SIZE(g_tun_threads); i++) {
+		if (g_tun_threads[i]) {
+			pthread_join(g_tun_threads[i], NULL);
+			g_tun_threads[i] = 0;
+		}
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(g_tun_fds); i++) {
+		if (g_tun_fds[i]) {
+			close(g_tun_fds[i]);
+			g_tun_fds[i] = 0;
+		}
+	}
 }
 
 ssize_t send_network_packet(const uint8_t *data, size_t size)
 {
     ssize_t nwrite;
 
-    nwrite = write(g_tun_fd, data, size);
+	/* use first tun fd for writes */
+    nwrite = write(g_tun_fds[0], data, size);
     if (nwrite < 0) {
         fprintf(stderr, "Error writing into tun: %s\n",
                 strerror(errno));
