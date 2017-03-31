@@ -40,9 +40,8 @@ bool is_tun_present(void)
     return access(clonedev, F_OK) == 0;
 }
 
-int tun_alloc(char *dev, int *fds, size_t count)
+int tun_alloc(char *dev)
 {
-	/*
     int fd;
     int err;
     struct ifreq ifr;
@@ -63,39 +62,6 @@ int tun_alloc(char *dev, int *fds, size_t count)
 
     strcpy(dev, ifr.ifr_name);
     return fd;
-	*/
-
-	struct ifreq ifr;
-	int fd, err, i;
-
-	memset(&ifr, 0, sizeof(ifr));
-
-	ifr.ifr_flags = IFF_TUN | IFF_NO_PI | IFF_MULTI_QUEUE;
-
-	for (i = 0; i < count; i++) {
-		if ((fd = open("/dev/net/tun", O_RDWR)) < 0) {
-			goto err;
-		}
-
-		err = ioctl(fd, TUNSETIFF, (void *)&ifr);
-		if (err) {
-			close(fd);
-			goto err;
-		}
-
-		fds[i] = fd;
-		printf("opened %d tun: %s\n", fd, ifr.ifr_name);
-	}
-
-	strcpy(dev, ifr.ifr_name);
-	return 0;
-
-err:
-	for (--i; i >= 0; i--) {
-		close(fds[i]);
-	}
-
-	return err;
 }
 
 const char *get_system_nameserver(void)
