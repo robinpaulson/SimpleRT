@@ -23,6 +23,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "utils.h"
+
 #define TUN_NAME "tun0"
 #define TUN_DEV "/dev/" TUN_NAME
 
@@ -44,3 +46,10 @@ int tun_alloc(char *dev)
 
     return fd;
 }
+
+const char *get_system_nameserver(void)
+{
+    puts("!!! System nameserver is not supported by macOS version, default will be used !!!");
+    return DEFAULT_NAMESERVER;
+}
+
