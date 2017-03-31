@@ -32,7 +32,7 @@ echo address:               $HOST_ADDR
 echo netmask:               $TUNNEL_CIDR
 echo nameserver:            $NAMESERVER
 
-ip l show $LOCAL_INTERFACE > /dev/null
+ifconfig $LOCAL_INTERFACE > /dev/null
 if [ ! $? -eq 0 ]; then
     echo Supply valid local interface!
     exit 1
@@ -43,6 +43,14 @@ if [ "$PLATFORM" = "linux" ]; then
     sysctl -w net.ipv4.ip_forward=1 > /dev/null
     iptables -I FORWARD -j ACCEPT
     iptables -t nat -I POSTROUTING -s $TUNNEL_NET/$TUNNEL_CIDR -o $LOCAL_INTERFACE -j MASQUERADE
+elif [ "$PLATFORM" = "osx" ]; then
+    ifconfig $TUN_DEV $HOST_ADDR 10.1.1.2 netmask 255.255.255.0 up
+    sysctl -w "net.inet.ip.forwarding=1" > /dev/null
+    sysctl -w "net.inet.ip.fw.enable=1" > /dev/null
+    echo "nat on $LOCAL_INTERFACE from $TUNNEL_NET/$TUNNEL_CIDR to any -> ($LOCAL_INTERFACE)" > /tmp/nat_rules_rt
+    pfctl -d > /dev/null
+    pfctl -F all > /dev/null
+    pfctl -f /tmp/nat_rules_rt -e > /dev/null
 else
     exit 1
 fi
