@@ -3,15 +3,12 @@ Reverse [Tethering](https://en.wikipedia.org/wiki/Tethering) utility for Android
 
 Allows you to share your computer's internet connection with your Android device via a USB cable.
 
-### Here is [multi-tethering](https://github.com/vvviperrr/SimpleRT/tree/multi_tether) version. Allows to connect several android devices to one Linux (only linux supports at this time) host into one virtual network!
-
 Development is still in progress, bugs and errors can occur.
 
 ### No root, no adb required!
 
-## This is multi-tethering version. Allows to connect several android devices to one Linux (only linux supports at this time) host into one virtual network!
-
-### Multi-tethering version supports only Linux host, OSX is in progress.
+## Linux version allows connect several android devices to one host into one virtual network!
+## macOS version supports only 1 device, due local tuntap limitation.
 
 - Android part:
 
@@ -32,7 +29,7 @@ Create local.properties file in root dir, it should be looks like that:
    ```
    app/build/outputs/apk/app-debug.apk is your apk.
 
-   #### There is already built multi-tether [apk](https://github.com/vvviperrr/SimpleRT/releases/download/1.1/simple-rt-1.1.apk.zip)
+   #### There is already built [apk](https://github.com/vvviperrr/SimpleRT/releases/download/1.1/simple-rt-1.1.apk.zip)
    
    <!---
    ## Now available in [f-droid](https://f-droid.org/repository/browse/?fdfilter=simplert&fdid=com.viper.simplert)
@@ -43,8 +40,6 @@ Create local.properties file in root dir, it should be looks like that:
    Dependencies:
    - libusb-1.0
    - tun/tap kernel module. osx version is [here](http://tuntaposx.sourceforge.net/).
-
-   #### FIrst of all, check out iface_up.sh and change LOCAL_INTERFACE, if you need.
 
    Makefile is universal for both linux and osx, just type make.
 
