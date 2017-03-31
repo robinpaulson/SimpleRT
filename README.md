@@ -9,7 +9,9 @@ Development is still in progress, bugs and errors can occur.
 
 ### No root, no adb required!
 
-Linux & OSX are supported! Windows is not, and unlikely to be in the future (ok, maybe in some day).
+## This is multi-tethering version. Allows to connect several android devices to one Linux (only linux supports at this time) host into one virtual network!
+
+### Multi-tethering version supports only Linux host, OSX is in progress.
 
 - Android part:
 
@@ -32,7 +34,9 @@ Create local.properties file in root dir, it should be looks like that:
 
    #### There is already built multi-tether [apk](https://github.com/vvviperrr/SimpleRT/releases/download/1.1/simple-rt-1.1.apk.zip)
    
+   <!---
    ## Now available in [f-droid](https://f-droid.org/repository/browse/?fdfilter=simplert&fdid=com.viper.simplert)
+   --->
 
 - Desktop part:
 

@@ -16,23 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _LINUX_ADK_H_
-#define _LINUX_ADK_H_
+#ifndef _ACCESSORY_H_
+#define _ACCESSORY_H_
 
 #include <stdint.h>
 #include <libusb.h>
 
-#include "accessory.h"
+typedef uint32_t accessory_id_t;
+typedef struct accessory_t accessory_t;
 
-typedef accessory_id_t (*gen_new_serial_str_cb)(char *str, size_t size);
+accessory_t *new_accessory(struct libusb_device_handle *handle);
+void free_accessory(accessory_t *acc);
 
-accessory_t *probe_usb_device(struct libusb_device *dev,
-        gen_new_serial_str_cb gen_new_serial_str);
+int send_accessory_packet(const uint8_t *data, size_t size,
+        accessory_id_t id);
 
-ssize_t read_usb_packet(struct libusb_device_handle *handle,
-        uint8_t *data, size_t size);
+void run_usb_probe_thread_detached(struct libusb_device *dev);
 
-ssize_t write_usb_packet(struct libusb_device_handle *handle,
-        const uint8_t *data, size_t size);
+accessory_id_t gen_new_serial_string(char *str, size_t size);
 
-#endif /* _LINUX_ADK_H_ */
+#endif

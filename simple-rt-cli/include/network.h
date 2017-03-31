@@ -16,19 +16,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _TUN_H_
-#define _TUN_H_
+#ifndef _NETWORH_H_
+#define _NETWORH_H_
 
+#include <stdint.h>
 #include <stdbool.h>
 
-#ifndef IFNAMSIZ
-#define IFNAMSIZ 16
-#endif
+#include "accessory.h"
 
-#define IFACE_UP_SH_PATH "./iface_up.sh"
+typedef struct network_config_t {
+    const char *interface;
+    const char *nameserver;
+} network_config_t;
 
-int tun_alloc(char *dev);
-bool is_tun_present(void);
-bool iface_up(const char *dev);
+bool start_network(const network_config_t *config);
+void stop_network(void);
+
+ssize_t send_network_packet(const uint8_t *data, size_t size);
+
+accessory_id_t get_acc_id_from_packet(const uint8_t *data,
+        size_t size, bool dst_addr);
+
+char *fill_serial_param(char *buf, size_t size,
+        accessory_id_t acc_id);
 
 #endif

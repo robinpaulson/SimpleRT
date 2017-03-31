@@ -69,6 +69,19 @@ public class TetherService extends VpnService {
             return START_NOT_STICKY;
         }
 
+        /* default values for compatibility with old simple_rt version */
+        int prefixLength = 30;
+        String ipAddr = "10.10.10.2";
+        String dnsServer = "8.8.8.8";
+
+        /* expected format: address,dns_server */
+        String[] tokens = accessory.getSerial().split(",");
+        if (tokens.length == 2) {
+            ipAddr = tokens[0];
+            dnsServer = tokens[1];
+            prefixLength = 24;
+        }
+
         Log.d(TAG, "Got accessory: " + accessory.getModel());
 
         IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
@@ -78,9 +91,9 @@ public class TetherService extends VpnService {
         Builder builder = new Builder();
         builder.setMtu(1500);
         builder.setSession(getString(R.string.app_name));
-        builder.addAddress("10.10.10.2", 30);
+        builder.addAddress(ipAddr, prefixLength);
         builder.addRoute("0.0.0.0", 0);
-        builder.addDnsServer("8.8.8.8");
+        builder.addDnsServer(dnsServer);
 
         final ParcelFileDescriptor accessoryFd = ((UsbManager) getSystemService(Context.USB_SERVICE)).openAccessory(accessory);
         if (accessoryFd == null) {

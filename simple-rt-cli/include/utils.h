@@ -16,23 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _LINUX_ADK_H_
-#define _LINUX_ADK_H_
+#ifndef _UTILS_H_
+#define _UTILS_H_
 
-#include <stdint.h>
-#include <libusb.h>
+#define DEFAULT_INTERFACE "eth0"
+#define DEFAULT_NAMESERVER "8.8.8.8"
 
-#include "accessory.h"
+#define ACC_BUF_SIZE 4096
 
-typedef accessory_id_t (*gen_new_serial_str_cb)(char *str, size_t size);
+#define ARRAY_SIZE(x) (sizeof((x)) / sizeof((x)[0]))
 
-accessory_t *probe_usb_device(struct libusb_device *dev,
-        gen_new_serial_str_cb gen_new_serial_str);
+extern const char *get_system_nameserver(void);
 
-ssize_t read_usb_packet(struct libusb_device_handle *handle,
-        uint8_t *data, size_t size);
-
-ssize_t write_usb_packet(struct libusb_device_handle *handle,
-        const uint8_t *data, size_t size);
-
-#endif /* _LINUX_ADK_H_ */
+#endif
