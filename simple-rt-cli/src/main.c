@@ -106,7 +106,6 @@ int main(int argc, char *argv[])
 
     while (true) {
         libusb_handle_events_completed(NULL, NULL);
-        usleep(1);
     }
 
     stop_network();

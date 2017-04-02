@@ -19,6 +19,9 @@ LDFLAGS = -lm -lpthread
 CC = gcc
 CFLAGS = -g -std=c99 -D_DEFAULT_SOURCE -Wall -Iinclude
 
+# FIXME
+CFLAGS += -Wno-typedef-redefinition
+
 CFLAGS += `pkg-config --cflags libusb-1.0`
 LDFLAGS += `pkg-config --libs libusb-1.0`
 

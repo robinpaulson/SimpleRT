@@ -144,9 +144,6 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
 
     printf("Device supports AOA %d.0!\n", aoa_version);
 
-    /* Some Android devices require a waiting period between transfer calls */
-    usleep(10000);
-
     if (gen_new_serial_str(serial_str, sizeof(serial_str)) == 0) {
         ret = 0;
         goto error;
