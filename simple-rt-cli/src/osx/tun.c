@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <sys/uio.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -32,7 +33,7 @@
 
 #include "utils.h"
 
-#define MY_SC_UNIT 2
+#define MY_SC_UNIT 2234
 
 bool is_tun_present(void)
 {
@@ -105,7 +106,7 @@ ssize_t tun_write_ip_packet(int fd, const uint8_t *packet, size_t size)
 
     iv[0].iov_base = (uint8_t *) &type;
     iv[0].iov_len = sizeof(type);
-    iv[1].iov_base = packet;
+    iv[1].iov_base = (uint8_t *) packet;
     iv[1].iov_len = size;
 
     return writev (fd, iv, ARRAY_SIZE(iv));
