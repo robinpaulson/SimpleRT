@@ -87,12 +87,28 @@ int tun_alloc(char *dev_name, size_t dev_name_size)
 
 ssize_t tun_read_ip_packet(int fd, uint8_t *packet, size_t size)
 {
-    return 0;
+    u_int32_t type;
+    struct iovec iv[2];
+
+    iv[0].iov_base = (uint8_t *) &type;
+    iv[0].iov_len = sizeof(type);
+    iv[1].iov_base = packet;
+    iv[1].iov_len = size;
+
+    return readv(fd, iv, ARRAY_SIZE(iv));
 }
 
 ssize_t tun_write_ip_packet(int fd, const uint8_t *packet, size_t size)
 {
-    return 0;
+    struct iovec iv[2];
+    uint32_t type = htonl(AF_INET);
+
+    iv[0].iov_base = (uint8_t *) &type;
+    iv[0].iov_len = sizeof(type);
+    iv[1].iov_base = packet;
+    iv[1].iov_len = size;
+
+    return writev (fd, iv, ARRAY_SIZE(iv));
 }
 
 const char *get_system_nameserver(void)
