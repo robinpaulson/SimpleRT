@@ -49,12 +49,18 @@
 
 #define IFACE_UP_SH_PATH "./iface_up.sh"
 
-extern int tun_alloc(char *dev);
+/* platform specified functions */
 extern bool is_tun_present(void);
+extern int tun_alloc(char *dev_name, size_t dev_name_size);
+extern ssize_t tun_read_ip_packet(int fd, uint8_t *packet, size_t size);
+extern ssize_t tun_write_ip_packet(int fd, const uint8_t *packet, size_t size);
 
+/* tun stuff */
 static int g_tun_fd = 0;
-static pthread_t g_tun_thread = 0;
-static volatile int g_tun_is_running = 0;
+static pthread_t g_tun_thread;
+static volatile bool g_tun_is_running = false;
+
+/* net cfg info */
 static const network_config_t *g_network_config;
 
 static inline void dump_addr_info(uint32_t addr, ssize_t size)
@@ -100,7 +106,7 @@ static void *tun_thread_proc(void *arg)
     g_tun_is_running = true;
 
     while (g_tun_is_running) {
-        if ((nread = read(g_tun_fd, acc_buf, sizeof(acc_buf))) > 0) {
+        if ((nread = tun_read_ip_packet(g_tun_fd, acc_buf, sizeof(acc_buf))) > 0) {
             if ((id = get_acc_id_from_packet(acc_buf, nread, true)) != 0) {
                 send_accessory_packet(acc_buf, nread, id);
             } else {
@@ -169,7 +175,7 @@ bool start_network(const network_config_t *config)
         return false;
     }
 
-    if ((tun_fd = tun_alloc(tun_name)) < 0) {
+    if ((tun_fd = tun_alloc(tun_name, sizeof(tun_name))) < 0) {
         perror("tun_alloc failed");
         return false;
     }
@@ -190,26 +196,25 @@ bool start_network(const network_config_t *config)
 
 void stop_network(void)
 {
-    g_tun_is_running = false;
-    g_network_config = NULL;
-
-    if (g_tun_thread) {
+    if (g_tun_is_running) {
         puts("stopping network");
+        g_tun_is_running = false;
         pthread_join(g_tun_thread, NULL);
-        g_tun_thread = 0;
     }
 
     if (g_tun_fd) {
         close(g_tun_fd);
         g_tun_fd = 0;
     }
+
+    g_network_config = NULL;
 }
 
 ssize_t send_network_packet(const uint8_t *data, size_t size)
 {
     ssize_t nwrite;
 
-    nwrite = write(g_tun_fd, data, size);
+    nwrite = tun_write_ip_packet(g_tun_fd, data, size);
     if (nwrite < 0) {
         fprintf(stderr, "Error writing into tun: %s\n",
                 strerror(errno));
