@@ -33,7 +33,7 @@ bool is_tun_present(void)
     return access(TUN_DEV, F_OK) == 0;
 }
 
-int tun_alloc(char *dev)
+int tun_alloc(char *dev_name, size_t dev_name_size)
 {
     int fd;
 
@@ -42,9 +42,20 @@ int tun_alloc(char *dev)
         return -1;
     }
 
-    strcpy(dev, TUN_NAME);
+    memset(dev_name, 0, dev_name_size);
+    strncpy(dev_name, TUN_NAME, dev_name_size - 1);
 
     return fd;
+}
+
+ssize_t tun_read_ip_packet(int fd, uint8_t *packet, size_t size)
+{
+    return 0;
+}
+
+ssize_t tun_write_ip_packet(int fd, const uint8_t *packet, size_t size)
+{
+    return 0;
 }
 
 const char *get_system_nameserver(void)
