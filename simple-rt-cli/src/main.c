@@ -27,7 +27,7 @@
 #include "network.h"
 #include "utils.h"
 
-static int hotplug_callback(struct libusb_context *ctx,
+static int LIBUSB_CALL hotplug_callback(struct libusb_context *ctx,
         struct libusb_device *dev,
         libusb_hotplug_event event,
         void * arg)

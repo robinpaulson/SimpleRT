@@ -35,6 +35,9 @@ endif
 ifeq ($(UNAME),Darwin)
 PLATFORM = osx
 endif
+ifeq ($(UNAME),MINGW64_NT-6.1)
+PLATFORM = win
+endif
 ifeq ($(PLATFORM),none)
 $(error unknown platform $(UNAME))
 endif
