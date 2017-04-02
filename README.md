@@ -8,7 +8,7 @@ Development is still in progress, bugs and errors can occur.
 ### No root, no adb required!
 
 ## Linux version allows connect several android devices to one host into one virtual network!
-## macOS version supports only 1 device, due local tuntap limitation.
+## MacOS version supports only 1 device, due local utun limitation.
 
 - Android part:
 
@@ -39,9 +39,9 @@ Create local.properties file in root dir, it should be looks like that:
 
    Dependencies:
    - libusb-1.0
-   - tun/tap kernel module. osx version is [here](http://tuntaposx.sourceforge.net/).
+   - tuntap kernel module (linux version), utun (osx version, builtin)
 
-   Makefile is universal for both linux and osx, just type make.
+   Makefile is universal for all platforms, just type make.
 
 Usage:
 
