@@ -63,10 +63,10 @@ static volatile bool g_tun_is_running = false;
 /* net cfg info */
 static const network_config_t *g_network_config;
 
-static inline void dump_addr_info(uint32_t addr, ssize_t size)
+static inline void dump_addr_info(uint32_t addr, size_t size)
 {
     uint32_t tmp = htonl(addr);
-    printf("packet size = %3zu, dest addr = %s, device id = %d\n", size,
+    printf("packet size = %zu, dest addr = %s, device id = %d\n", size,
             inet_ntoa(*(struct in_addr *) &tmp),
             addr & 0xff);
 }

@@ -17,10 +17,7 @@
 TARGET = simple-rt
 LDFLAGS = -lm -lpthread
 CC = gcc
-CFLAGS = -g -std=c99 -D_DEFAULT_SOURCE -Wall -Iinclude
-
-# FIXME
-CFLAGS += -Wno-typedef-redefinition
+CFLAGS = -g -std=c11 -D_DEFAULT_SOURCE -Wall -pedantic -Iinclude
 
 CFLAGS += `pkg-config --cflags libusb-1.0`
 LDFLAGS += `pkg-config --libs libusb-1.0`
