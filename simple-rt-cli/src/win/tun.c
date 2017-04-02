@@ -28,14 +28,24 @@ bool is_tun_present(void)
     return false;
 }
 
-int tun_alloc(char *dev)
+int tun_alloc(char *dev_name, size_t dev_name_size)
 {
     return -1;
 }
 
+ssize_t tun_read_ip_packet(int fd, uint8_t *packet, size_t size)
+{
+    return 0;
+}
+
+ssize_t tun_write_ip_packet(int fd, const uint8_t *packet, size_t size)
+{
+    return 0;
+}
+
 const char *get_system_nameserver(void)
 {
-    puts("!!! System nameserver is not supported by windows version, default will be used !!!");
+    puts("!!! System nameserver is not supported by Windows version, default will be used !!!");
     return DEFAULT_NAMESERVER;
 }
 
