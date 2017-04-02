@@ -23,26 +23,63 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/sys_domain.h>
+#include <sys/kern_control.h>
+#include <net/if_utun.h>
+
 #include "utils.h"
 
-#define TUN_NAME "tun0"
-#define TUN_DEV "/dev/" TUN_NAME
+#define MY_SC_UNIT 2
 
 bool is_tun_present(void)
 {
-    return access(TUN_DEV, F_OK) == 0;
+    /* assume utun always present */
+    return true;
 }
 
 int tun_alloc(char *dev)
 {
-    int fd;
+    int fd = 0;
+    struct sockaddr_ctl sc = { 0 };
+    struct ctl_info ctlInfo = { 0 };
 
-    if ((fd = open(TUN_DEV, O_RDWR)) < 0 ) {
-        perror("error open tun");
+    if (strlcpy(ctlInfo.ctl_name, UTUN_CONTROL_NAME, sizeof(ctlInfo.ctl_name)) >=
+            sizeof(ctlInfo.ctl_name))
+    {
+        fprintf(stderr,"UTUN_CONTROL_NAME too long");
         return -1;
     }
 
-    strcpy(dev, TUN_NAME);
+    if ((fd = socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL)) < 0) {
+        perror("socket(SYSPROTO_CONTROL)");
+        return -1;
+    }
+
+    if (ioctl(fd, CTLIOCGINFO, &ctlInfo) == -1) {
+        perror("ioctl(CTLIOCGINFO)");
+        close(fd);
+        return -1;
+    }
+
+    sc.sc_id = ctlInfo.ctl_id;
+    sc.sc_len = sizeof(sc);
+    sc.sc_family = AF_SYSTEM;
+    sc.ss_sysaddr = AF_SYS_CONTROL;
+    sc.sc_unit = MY_SC_UNIT;
+
+    // If the connect is successful, a tun%d device will be created,
+    // where "%d" is our unit number -1
+
+    if (connect(fd, (struct sockaddr *) &sc, sizeof(sc)) == -1) {
+        perror("connect(AF_SYS_CONTROL)");
+        close(fd);
+        return -1;
+    }
+
+    snprintf(dev, 16, "utun%d", sc.sc_unit - 1);
 
     return fd;
 }
