@@ -27,12 +27,6 @@
 #include <linux/if_tun.h>
 #include <sys/ioctl.h>
 
-#include <arpa/inet.h>
-#include <arpa/nameser.h>
-#include <resolv.h>
-
-#include "utils.h"
-
 static const char clonedev[] = "/dev/net/tun";
 
 bool is_tun_present(void)
@@ -74,28 +68,5 @@ ssize_t tun_read_ip_packet(int fd, uint8_t *packet, size_t size)
 ssize_t tun_write_ip_packet(int fd, const uint8_t *packet, size_t size)
 {
     return write(fd, packet, size);
-}
-
-const char *get_system_nameserver(void)
-{
-    struct __res_state rs;
-    static char buf[128];
-
-    if (res_ninit(&rs) < 0) {
-        goto end;
-    }
-
-    if (!rs.nscount) {
-        goto end;
-    }
-
-    /* using first nameserver */
-    memset(buf, 0, sizeof(buf));
-    strncpy(buf, inet_ntoa(rs.nsaddr_list[0].sin_addr), sizeof(buf) - 1);
-    return buf;
-
-end:
-    fprintf(stderr, "Cannot find system nameserver. Default one will be used.\n");
-    return DEFAULT_NAMESERVER;
 }
 

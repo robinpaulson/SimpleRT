@@ -43,8 +43,9 @@ CFLAGS += -DPLATFORM="\"$(PLATFORM)\""
 
 OBJ = obj
 SOURCES = src
+UNIX_SRC = src/unix_common
 PLATFORM_SRC = $(SOURCES)/$(PLATFORM)
-OBJECTS += $(patsubst %.c, $(OBJ)/%.o, $(wildcard $(SOURCES)/*.c $(PLATFORM_SRC)/*.c))
+OBJECTS = $(patsubst %.c, $(OBJ)/%.o, $(wildcard $(SOURCES)/*.c $(UNIX_SRC)/*.c $(PLATFORM_SRC)/*.c))
 HEADERS = $(wildcard include/*.h)
 
 $(OBJ)/%.o: %.c $(HEADERS)

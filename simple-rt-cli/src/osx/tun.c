@@ -112,9 +112,3 @@ ssize_t tun_write_ip_packet(int fd, const uint8_t *packet, size_t size)
     return writev (fd, iv, ARRAY_SIZE(iv));
 }
 
-const char *get_system_nameserver(void)
-{
-    puts("!!! System nameserver is not supported by macOS version, default will be used !!!");
-    return DEFAULT_NAMESERVER;
-}
-
