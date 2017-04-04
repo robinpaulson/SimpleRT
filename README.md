@@ -7,8 +7,13 @@ Development is still in progress, bugs and errors can occur.
 
 ### No root, no adb required!
 
-## Linux version allows connect several android devices to one host into one virtual network!
-## MacOS version supports only 1 device, due local utun limitation.
+## Full Linux and macOS support! Windows version is in early researching.
+
+   Current version features:
+   - Multi-tether. You can connect several android devices into one virtual network!
+   - DNS server specifying (custom or system one).
+
+The SimpleRT utility consists of 2 parts:
 
 - Android part:
 
@@ -39,7 +44,8 @@ Create local.properties file in root dir, it should be looks like that:
 
    Dependencies:
    - libusb-1.0
-   - tuntap kernel module (linux version), utun (osx version, builtin)
+   - libresolv (usually already presented in both linux and macos)
+   - tuntap kernel module (linux version), utun (macos version, builtin)
 
    Makefile is universal for all platforms, just type make.
 
