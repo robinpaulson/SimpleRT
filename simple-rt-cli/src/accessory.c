@@ -24,7 +24,7 @@
 #include <pthread.h>
 
 #include "accessory.h"
-#include "linux-adk.h"
+#include "adk.h"
 #include "network.h"
 #include "utils.h"
 

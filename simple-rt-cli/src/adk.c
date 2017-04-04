@@ -22,7 +22,7 @@
 #include <unistd.h>
 
 #include "utils.h"
-#include "linux-adk.h"
+#include "adk.h"
 
 /* Android Open Accessory protocol defines */
 #define AOA_GET_PROTOCOL            51
