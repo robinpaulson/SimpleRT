@@ -60,9 +60,6 @@ static int g_tun_fd = 0;
 static pthread_t g_tun_thread;
 static volatile bool g_tun_is_running = false;
 
-/* net cfg info */
-static const network_config_t *g_network_config;
-
 static inline void dump_addr_info(uint32_t addr, size_t size)
 {
     uint32_t tmp = htonl(addr);
@@ -133,6 +130,8 @@ static bool iface_up(const char *dev)
     char net_addr_str[32] = { 0 };
     char host_addr_str[32] = { 0 };
 
+    simple_rt_config_t *config = get_simple_rt_config();
+
     uint32_t net_addr = htonl(SIMPLERT_NETWORK_ADDRESS);
     uint32_t host_addr = htonl(SIMPLERT_NETWORK_ADDRESS | 0x1);
     uint32_t mask = __builtin_popcount(NETWORK_ADDRESS(-1));
@@ -145,23 +144,16 @@ static bool iface_up(const char *dev)
 
     snprintf(cmd, sizeof(cmd), "%s %s %s %s %s %u %s %s\n",
             IFACE_UP_SH_PATH, PLATFORM, dev, net_addr_str, host_addr_str, mask,
-            g_network_config->nameserver,
-            g_network_config->interface);
+            config->nameserver,
+            config->interface);
 
     return system(cmd) == 0;
 }
 
-bool start_network(const network_config_t *config)
+bool start_network(void)
 {
     int tun_fd = 0;
     char tun_name[IFNAMSIZ] = { 0 };
-
-    if (!config) {
-        fprintf(stderr, "Network config required!\n");
-        return false;
-    }
-
-    g_network_config = config;
 
     if (g_tun_is_running) {
         fprintf(stderr, "Network already started!\n");
@@ -206,8 +198,6 @@ void stop_network(void)
         close(g_tun_fd);
         g_tun_fd = 0;
     }
-
-    g_network_config = NULL;
 }
 
 ssize_t send_network_packet(const uint8_t *data, size_t size)
@@ -226,10 +216,13 @@ ssize_t send_network_packet(const uint8_t *data, size_t size)
 
 char *fill_serial_param(char *buf, size_t size, accessory_id_t id)
 {
+    simple_rt_config_t *config = get_simple_rt_config();
     uint32_t addr = htonl(SIMPLERT_NETWORK_ADDRESS | id);
+
     snprintf(buf, size, "%s,%s",
             inet_ntoa(*(struct in_addr *) &addr),
-            g_network_config->nameserver);
+            config->nameserver);
+
     return buf;
 }
 

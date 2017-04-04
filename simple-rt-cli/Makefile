@@ -15,8 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 TARGET = simple-rt
+
+CC ?= gcc
 LDFLAGS = -lm -lpthread -lresolv
-CC = gcc
 CFLAGS = -g -std=c11 -D_DEFAULT_SOURCE -Wall -pedantic -Iinclude
 
 CFLAGS += `pkg-config --cflags libusb-1.0`

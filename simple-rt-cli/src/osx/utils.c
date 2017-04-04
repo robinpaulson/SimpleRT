@@ -16,23 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETWORH_H_
-#define _NETWORH_H_
+#include "utils.h"
 
-#include <stdint.h>
-#include <stdbool.h>
+static simple_rt_config_t simple_rt_config = {
+    .interface = "en0",
+    .nameserver = DEFAULT_NAMESERVER,
+};
 
-#include "accessory.h"
+simple_rt_config_t *get_simple_rt_config(void)
+{
+    return &simple_rt_config;
+}
 
-bool start_network(void);
-void stop_network(void);
-
-ssize_t send_network_packet(const uint8_t *data, size_t size);
-
-accessory_id_t get_acc_id_from_packet(const uint8_t *data,
-        size_t size, bool dst_addr);
-
-char *fill_serial_param(char *buf, size_t size,
-        accessory_id_t acc_id);
-
-#endif

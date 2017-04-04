@@ -47,10 +47,7 @@ int main(int argc, char *argv[])
     int rc = 0;
     libusb_hotplug_callback_handle callback_handle;
 
-    network_config_t network_config = {
-        .interface = DEFAULT_INTERFACE,
-        .nameserver = DEFAULT_NAMESERVER,
-    };
+    simple_rt_config_t *config = get_simple_rt_config();
 
     libusb_init(NULL);
 
@@ -60,21 +57,21 @@ int main(int argc, char *argv[])
             printf("usage: sudo %s [-h] [-i interface] [-n nameserver|\"local\" ]\n"
                     "default params: -i %s -n %s\n",
                     argv[0],
-                    network_config.interface,
-                    network_config.nameserver);
+                    config->interface,
+                    config->nameserver);
             return EXIT_SUCCESS;
         case 'd':
             puts("debug mode enabled");
             libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_DEBUG);
             break;
         case 'i':
-            network_config.interface = optarg;
+            config->interface = optarg;
             break;
         case 'n':
             if (!strcmp(optarg, "local")) {
-                network_config.nameserver = get_system_nameserver();
+                config->nameserver = get_system_nameserver();
             } else {
-                network_config.nameserver = optarg;
+                config->nameserver = optarg;
             }
             break;
         case '?':
@@ -88,7 +85,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (!start_network(&network_config)) {
+    if (!start_network()) {
         fprintf(stderr, "Unable to start network!\n");
         return EXIT_FAILURE;
     }

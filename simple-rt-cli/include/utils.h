@@ -19,13 +19,18 @@
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
-#define DEFAULT_INTERFACE "eth0"
 #define DEFAULT_NAMESERVER "8.8.8.8"
 
 #define ACC_BUF_SIZE 4096
 
 #define ARRAY_SIZE(x) (sizeof((x)) / sizeof((x)[0]))
 
+typedef struct simple_rt_config_t {
+    const char *interface;
+    const char *nameserver;
+} simple_rt_config_t;
+
+extern simple_rt_config_t *get_simple_rt_config(void);
 extern const char *get_system_nameserver(void);
 
 #endif
