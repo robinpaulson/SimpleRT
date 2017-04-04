@@ -45,6 +45,7 @@ if [ "$PLATFORM" = "linux" ]; then
     iptables -t nat -I POSTROUTING -s $TUNNEL_NET/$TUNNEL_CIDR -o $LOCAL_INTERFACE -j MASQUERADE
 elif [ "$PLATFORM" = "osx" ]; then
     ifconfig $TUN_DEV $HOST_ADDR 10.1.1.2 netmask 255.255.255.0 up
+    route add -net $TUNNEL_NET $HOST_ADDR
     pfctl -sn | grep $TUNNEL_NET > /dev/null
     if [ ! $? -eq 0 ]; then
         sysctl -w net.inet.ip.forwarding=1
