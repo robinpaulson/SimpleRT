@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 TARGET = simple-rt
-LDFLAGS = -lm -lpthread
+LDFLAGS = -lm -lpthread -lresolv
 CC = gcc
 CFLAGS = -g -std=c11 -D_DEFAULT_SOURCE -Wall -pedantic -Iinclude
 
