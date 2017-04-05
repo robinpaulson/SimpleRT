@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # SimpleRT: Reverse tethering utility for Android
 # Copyright (C) 2016 Konstantin Menyaev
 #
@@ -15,35 +16,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#params from simple-rt-cli
 PLATFORM=$1
-TUN_DEV=$2
-TUNNEL_NET=$3
-HOST_ADDR=$4
-TUNNEL_CIDR=$5
-NAMESERVER=$6
-LOCAL_INTERFACE=$7
+ACTION=$2
+TUN_DEV=$3
+TUNNEL_NET=$4
+HOST_ADDR=$5
+TUNNEL_CIDR=$6
+NAMESERVER=$7
+LOCAL_INTERFACE=$8
+shift
 
-echo configuring:
-echo local interface:       $LOCAL_INTERFACE
-echo virtual interface:     $TUN_DEV
-echo network:               $TUNNEL_NET
-echo address:               $HOST_ADDR
-echo netmask:               $TUNNEL_CIDR
-echo nameserver:            $NAMESERVER
+set -e
 
-ifconfig $LOCAL_INTERFACE > /dev/null
-if [ ! $? -eq 0 ]; then
-    echo Supply valid local interface!
-    exit 1
-fi
+comment="simple_rt"
 
-if [ "$PLATFORM" = "linux" ]; then
+function linux_start {
     ifconfig $TUN_DEV $HOST_ADDR/$TUNNEL_CIDR up
     sysctl -w net.ipv4.ip_forward=1 > /dev/null
-    iptables -I FORWARD -j ACCEPT
-    iptables -t nat -I POSTROUTING -s $TUNNEL_NET/$TUNNEL_CIDR -o $LOCAL_INTERFACE -j MASQUERADE
-elif [ "$PLATFORM" = "osx" ]; then
+    iptables -I FORWARD -j ACCEPT -m comment --comment "${comment}"
+    iptables -t nat -I POSTROUTING -s $TUNNEL_NET/$TUNNEL_CIDR -o $LOCAL_INTERFACE -j MASQUERADE -m comment --comment "${comment}"
+}
+
+function linux_stop {
+    iptables-save | grep -v "${comment}" | iptables-restore
+}
+
+function osx_start {
     ifconfig $TUN_DEV $HOST_ADDR 10.1.1.2 netmask 255.255.255.0 up
     route add -net $TUNNEL_NET $HOST_ADDR
     pfctl -sn | grep $TUNNEL_NET > /dev/null
@@ -55,9 +53,51 @@ elif [ "$PLATFORM" = "osx" ]; then
         pfctl -F all
         pfctl -f /tmp/nat_rules_rt -e
     fi
-else
+}
+
+function osx_stop {
+    echo stop osx
+}
+
+if [ "$ACTION" = "start" ]; then
+    echo configuring:
+    echo local interface:       $LOCAL_INTERFACE
+    echo virtual interface:     $TUN_DEV
+    echo network:               $TUNNEL_NET
+    echo address:               $HOST_ADDR
+    echo netmask:               $TUNNEL_CIDR
+    echo nameserver:            $NAMESERVER
+fi
+
+ifconfig $LOCAL_INTERFACE > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo Supply valid local interface!
     exit 1
 fi
+
+cmd="$PLATFORM-$ACTION"
+
+case "$cmd" in
+    linux-start)
+        linux_start $@
+        ;;
+
+    linux-stop)
+        linux_stop $@
+        ;;
+
+    osx-start)
+        osx_start $@
+        ;;
+
+    osx-stop)
+        osx_stop $@
+        ;;
+
+    *)
+        echo "Unknown command: $cmd"
+        exit 1
+esac
 
 exit 0
 
