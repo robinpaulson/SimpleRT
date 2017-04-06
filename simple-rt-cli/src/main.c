@@ -19,14 +19,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
+#include <errno.h>
 #include <signal.h>
 #include <getopt.h>
 #include <libusb.h>
+#include <sys/file.h>
 
 #include "accessory.h"
 #include "network.h"
 #include "utils.h"
+
+#define PID_FILE "/var/run/simple_rt.pid"
 
 static int hotplug_callback(struct libusb_context *ctx,
         struct libusb_device *dev,
@@ -41,6 +46,21 @@ static int hotplug_callback(struct libusb_context *ctx,
     run_usb_probe_thread_detached(dev);
 
     return 0;
+}
+
+static bool is_instance_already_running(void)
+{
+    int pid_file = open(PID_FILE, O_CREAT | O_RDWR, 0666);
+    int rc = flock(pid_file, LOCK_EX | LOCK_NB);
+
+    if (rc < 0 && errno == EWOULDBLOCK) {
+        /* one instance already running */
+        return true;
+    }
+
+    /* do not bother of releasing descriptor */
+
+    return false;
 }
 
 static volatile sig_atomic_t g_exit_flag = 0;
@@ -89,6 +109,11 @@ int main(int argc, char *argv[])
         default:
             return EXIT_FAILURE;
         }
+    }
+
+    if (is_instance_already_running()) {
+        fprintf(stderr, "One instance of SimpleRT is already running!\n");
+        return EXIT_FAILURE;
     }
 
     if (geteuid() != 0) {
