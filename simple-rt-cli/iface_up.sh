@@ -44,20 +44,24 @@ function linux_stop {
 function osx_start {
     ifconfig $TUN_DEV $HOST_ADDR 10.1.1.2 netmask 255.255.255.0 up
     route add -net $TUNNEL_NET $HOST_ADDR
-    pfctl -sn | grep $TUNNEL_NET > /dev/null
-    if [ ! $? -eq 0 ]; then
-        sysctl -w net.inet.ip.forwarding=1
-        sysctl -w net.inet.ip.fw.enable=1
-        echo "nat on $LOCAL_INTERFACE from $TUNNEL_NET/$TUNNEL_CIDR to any -> ($LOCAL_INTERFACE)" > /tmp/nat_rules_rt
-        pfctl -d
-        pfctl -F all
-        pfctl -f /tmp/nat_rules_rt -e
-    fi
+    sysctl -w net.inet.ip.forwarding=1
+    echo "nat on $LOCAL_INTERFACE from $TUNNEL_NET/$TUNNEL_CIDR to any -> ($LOCAL_INTERFACE)" > /tmp/nat_rules_rt
+
+    # disable pf
+    pfctl -qd 2>&1 > /dev/null || true
+    pfctl -qF all 2>&1 > /dev/null || true
+
+    # enable pf with simplert rules
+    pfctl -qf /tmp/nat_rules_rt -e
 }
 
 function osx_stop {
-    # TODO
-    echo stop osx
+    # disable pf
+    pfctl -qd 2>&1 > /dev/null || true
+    pfctl -qF all 2>&1 > /dev/null || true
+
+    # enable pf with system rules
+    pfctl -qf /etc/pf.conf -e
 }
 
 if [ "$ACTION" = "start" ]; then
