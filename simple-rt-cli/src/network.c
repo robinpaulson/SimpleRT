@@ -150,6 +150,16 @@ static bool iface_up(const char *dev)
     return system(cmd) == 0;
 }
 
+static bool iface_down(void)
+{
+    char cmd[1024] = { 0 };
+
+    snprintf(cmd, sizeof(cmd), "%s %s stop",
+            IFACE_UP_SH_PATH, PLATFORM);
+
+    return system(cmd) == 0;
+}
+
 bool start_network(void)
 {
     int tun_fd = 0;
@@ -193,6 +203,7 @@ void stop_network(void)
         g_tun_is_running = false;
         pthread_cancel(g_tun_thread);
         pthread_join(g_tun_thread, NULL);
+        iface_down();
     }
 
     if (g_tun_fd) {
