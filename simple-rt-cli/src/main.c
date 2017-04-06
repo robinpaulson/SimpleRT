@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
 #include <getopt.h>
 #include <libusb.h>
 
@@ -42,6 +43,14 @@ static int hotplug_callback(struct libusb_context *ctx,
     return 0;
 }
 
+static volatile sig_atomic_t g_exit_flag = 0;
+
+static void exit_signal_handler(int signo)
+{
+    g_exit_flag = 1;
+    puts("");
+}
+
 int main(int argc, char *argv[])
 {
     int rc = 0;
@@ -50,6 +59,8 @@ int main(int argc, char *argv[])
     simple_rt_config_t *config = get_simple_rt_config();
 
     libusb_init(NULL);
+
+    signal(SIGINT, exit_signal_handler);
 
     while ((rc = getopt (argc, argv, "hdi:n:")) != -1) {
         switch (rc) {
@@ -101,11 +112,12 @@ int main(int argc, char *argv[])
 
     puts("SimpleRT started!");
 
-    while (true) {
+    while (!g_exit_flag) {
         libusb_handle_events_completed(NULL, NULL);
     }
 
     stop_network();
+
     libusb_hotplug_deregister_callback(NULL, callback_handle);
     libusb_exit(NULL);
 

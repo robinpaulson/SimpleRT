@@ -191,6 +191,7 @@ void stop_network(void)
     if (g_tun_is_running) {
         puts("stopping network");
         g_tun_is_running = false;
+        pthread_cancel(g_tun_thread);
         pthread_join(g_tun_thread, NULL);
     }
 
