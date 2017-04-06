@@ -5,6 +5,15 @@ Allows you to share your computer's internet connection with your Android device
 
 Development is still in progress, bugs and errors can occur.
 
+```
+IMPORTANT!
+   If you have any issues with this tool, please, provide some logs:
+   - run util in debug mode (-d), connect you device
+   - run "ip addr show"
+   - run "ip route show"
+   - store this output into issue ticket on github
+```
+
 ### No root, no adb required!
 
 ## Full Linux and macOS support! Windows version is in early researching.
