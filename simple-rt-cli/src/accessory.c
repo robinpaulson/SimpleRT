@@ -29,6 +29,8 @@
 #include "utils.h"
 
 typedef struct accessory_t {
+    uint8_t ep_in;
+    uint8_t ep_out;
     accessory_id_t id;
     volatile bool is_running;
     struct libusb_device_handle *handle;
@@ -128,7 +130,8 @@ static void accessory_worker_proc(accessory_t *acc)
 
     /* read first packet and map acc->id */
     while (acc->is_running) {
-        if ((nread = read_usb_packet(acc->handle, acc_buf, sizeof(acc_buf))) > 0) {
+        if ((nread = read_usb_packet(acc->handle, acc->ep_in,
+                        acc_buf, sizeof(acc_buf))) > 0) {
             if ((id = get_acc_id_from_packet(acc_buf, nread, false)) != 0) {
                 store_accessory_id(acc, id);
                 break;
@@ -142,7 +145,8 @@ static void accessory_worker_proc(accessory_t *acc)
 
     /* read rest packets */
     while (acc->is_running) {
-        if ((nread = read_usb_packet(acc->handle, acc_buf, sizeof(acc_buf))) > 0) {
+        if ((nread = read_usb_packet(acc->handle, acc->ep_in,
+                        acc_buf, sizeof(acc_buf))) > 0) {
             if (send_network_packet(acc_buf, nread) < 0) {
                 break;
             }
@@ -158,7 +162,7 @@ end:
     free_accessory(acc);
 }
 
-accessory_t *new_accessory(struct libusb_device_handle *handle)
+accessory_t *new_accessory(struct libusb_device_handle *handle, uint8_t ep_in, uint8_t ep_out)
 {
     accessory_t *acc = NULL;
 
@@ -166,6 +170,8 @@ accessory_t *new_accessory(struct libusb_device_handle *handle)
     acc->id = 0;
     acc->is_running = false;
     acc->handle = handle;
+    acc->ep_in = ep_in;
+    acc->ep_out = ep_out;
 
     return acc;
 }
@@ -195,7 +201,7 @@ int send_accessory_packet(const uint8_t *data, size_t size,
     accessory_t *acc;
 
     if ((acc = find_accessory_by_id(id)) != NULL) {
-        if (write_usb_packet(acc->handle, data, size) < 0) {
+        if (write_usb_packet(acc->handle, acc->ep_out, data, size) < 0) {
             /* seems like accessory removed, just ignore */
         }
     } else {

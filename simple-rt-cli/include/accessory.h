@@ -25,7 +25,9 @@
 typedef uint32_t accessory_id_t;
 typedef struct accessory_t accessory_t;
 
-accessory_t *new_accessory(struct libusb_device_handle *handle);
+accessory_t *new_accessory(struct libusb_device_handle *handle,
+        uint8_t ep_in, uint8_t ep_out);
+
 void free_accessory(accessory_t *acc);
 
 int send_accessory_packet(const uint8_t *data, size_t size,

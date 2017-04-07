@@ -51,13 +51,75 @@
 #define AOA_ACCESSORY_AUDIO_PID     0x2D04	/* accessory + audio */
 #define AOA_ACCESSORY_AUDIO_ADB_PID 0x2D05	/* accessory + audio + adb */
 
-/* Endpoint Addresses TODO get from interface descriptor */
+/* Default Endpoint Addresses */
 #define AOA_ACCESSORY_EP_IN         0x81
 #define AOA_ACCESSORY_EP_OUT        0x02
+
 #define AOA_ACCESSORY_INTERFACE     0x00
 
 /* ACC params */
 #define ACC_TIMEOUT 200
+
+static uint16_t get_accessory_endpoints(struct libusb_device *dev)
+{
+    /* default values */
+    uint8_t ep_in = AOA_ACCESSORY_EP_IN;
+    uint8_t ep_out = AOA_ACCESSORY_EP_OUT;
+
+    bool found = false;
+    struct libusb_config_descriptor *config = NULL;
+
+    libusb_get_config_descriptor(dev, 0, &config);
+
+    if (!config) {
+        goto end;
+    }
+
+    if (!config->bNumInterfaces) {
+        goto end;
+    }
+
+    /* FIXME: get interface by name? */
+    const struct libusb_interface *iface = &config->interface[AOA_ACCESSORY_INTERFACE];
+
+    if (!iface) {
+        goto end;
+    }
+
+    if (!iface->num_altsetting) {
+        goto end;
+    }
+
+    const struct libusb_interface_descriptor *interface = &iface->altsetting[0];
+
+    if (!interface) {
+        goto end;
+    }
+
+    if (interface->bNumEndpoints < 2) {
+        goto end;
+    }
+
+    /* FIXME: get endpoints by name? */
+    const struct libusb_endpoint_descriptor *endpoint_in = &interface->endpoint[0];
+    const struct libusb_endpoint_descriptor *endpoint_out = &interface->endpoint[1];
+
+    found = true;
+    ep_in = endpoint_in->bEndpointAddress;
+    ep_out = endpoint_out->bEndpointAddress;
+
+end:
+    if (config) {
+        libusb_free_config_descriptor(config);
+    }
+
+    if (!found) {
+        fprintf(stderr, "Unable to get endpoints addresses from device, "
+                "default will be used\n");
+    }
+
+    return (ep_in << 8) | ep_out;
+}
 
 static bool is_accessory_present(struct libusb_device *dev)
 {
@@ -101,6 +163,8 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
     }
 
     if (is_accessory_present(dev)) {
+        uint16_t endpoints = get_accessory_endpoints(dev);
+
         /* Claiming first (accessory) interface from usb device */
         ret = libusb_claim_interface(handle, AOA_ACCESSORY_INTERFACE);
         if (ret != 0) {
@@ -109,7 +173,7 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
         }
 
         /* create accessory struct */
-        return new_accessory(handle);
+        return new_accessory(handle, endpoints >> 8, endpoints & 0xff);
     }
 
     /* Check whether a kernel driver is attached. If so, we'll need to detach it. */
@@ -249,14 +313,14 @@ error:
 }
 
 /* FIXME: read_all semantic */
-ssize_t read_usb_packet(struct libusb_device_handle *handle,
+ssize_t read_usb_packet(struct libusb_device_handle *handle, uint8_t ep,
         uint8_t *data, size_t size)
 {
     int ret;
     int transferred;
 
     while (true) {
-        ret = libusb_bulk_transfer(handle, AOA_ACCESSORY_EP_IN,
+        ret = libusb_bulk_transfer(handle, ep,
                 data, size, &transferred, ACC_TIMEOUT);
         if (ret < 0) {
             if (ret == LIBUSB_ERROR_TIMEOUT) {
@@ -276,14 +340,14 @@ ssize_t read_usb_packet(struct libusb_device_handle *handle,
 }
 
 /* FIXME: write_all semantic */
-ssize_t write_usb_packet(struct libusb_device_handle *handle,
+ssize_t write_usb_packet(struct libusb_device_handle *handle, uint8_t ep,
         const uint8_t *data, size_t size)
 {
     int ret;
     int transferred;
 
     while (true) {
-        ret = libusb_bulk_transfer(handle, AOA_ACCESSORY_EP_OUT,
+        ret = libusb_bulk_transfer(handle, ep,
                 (uint8_t *) data, size, &transferred, ACC_TIMEOUT);
         if (ret < 0) {
             if (ret == LIBUSB_ERROR_TIMEOUT) {
