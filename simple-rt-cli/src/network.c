@@ -24,6 +24,7 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 
+#include "tun.h"
 #include "network.h"
 #include "utils.h"
 
@@ -48,12 +49,6 @@
     ((addr) & 0xff)
 
 #define IFACE_UP_SH_PATH "./iface_up.sh"
-
-/* platform specified functions */
-extern bool is_tun_present(void);
-extern int tun_alloc(char *dev_name, size_t dev_name_size);
-extern ssize_t tun_read_ip_packet(int fd, uint8_t *packet, size_t size);
-extern ssize_t tun_write_ip_packet(int fd, const uint8_t *packet, size_t size);
 
 /* tun stuff */
 static int g_tun_fd = 0;
