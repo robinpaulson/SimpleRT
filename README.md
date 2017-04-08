@@ -14,6 +14,13 @@ IMPORTANT!
    - store this output into issue ticket on github
 ```
 
+```
+FIRST RUN: check out -h option!
+   simple-rt -h
+   usage: sudo ./simple-rt [-h] [-i interface] [-n nameserver|"local" ]
+   default params: -i eth0 -n 8.8.8.8
+```
+
 ### No root, no adb required!
 
 ## Full Linux and macOS support! Windows version is in early researching.
