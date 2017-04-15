@@ -23,7 +23,7 @@ CFLAGS = -g -std=c11 -D_DEFAULT_SOURCE -Wall -pedantic -Iinclude
 CFLAGS += `pkg-config --cflags libusb-1.0`
 LDFLAGS += `pkg-config --libs libusb-1.0`
 
-.PHONY: default all clean
+.PHONY: default all clean install uninstall
 
 default: $(TARGET)
 all: default
@@ -61,3 +61,21 @@ $(TARGET): $(OBJECTS)
 clean:
 	-rm -rf $(OBJ)
 	-rm -f $(TARGET)
+
+PREFIX = /usr/local/
+
+install: simple-rt
+	mkdir -p $(DESTDIR)$(PREFIX)/sbin
+	mkdir -p $(DESTDIR)$(PREFIX)/share/simple-rt
+	cp $< $(DESTDIR)$(PREFIX)/share/simple-rt
+	cp iface_up.sh $(DESTDIR)$(PREFIX)/share/simple-rt/iface_up.sh
+	echo "#!/bin/bash" > $(DESTDIR)$(PREFIX)/sbin/simple-rt
+	echo cd `realpath $(DESTDIR)$(PREFIX)/share/simple-rt` >> $(DESTDIR)$(PREFIX)/sbin/simple-rt
+	echo './simple-rt $$@' >> $(DESTDIR)$(PREFIX)/sbin/simple-rt
+	chmod +x $(DESTDIR)$(PREFIX)/sbin/simple-rt
+	echo "SimpleRT installed, make sure $(DESTDIR)$(PREFIX)/sbin/ is in your PATH-variable."
+
+uninstall:
+	rm -rf $(DESTDIR)$(PREFIX)/share/simple-rt
+	rm -f $(DESTDIR)$(PREFIX)/sbin/simple-rt
+
