@@ -73,7 +73,7 @@ install: simple-rt
 	cp $< $(DESTDIR)$(libexecdir)/simple-rt
 	cp iface_up.sh $(DESTDIR)$(libexecdir)/simple-rt/iface_up.sh
 	echo "#!/bin/bash" > $(DESTDIR)$(sbindir)/simple-rt
-	echo cd $(PREFIX)$(libexecdir)/simple-rt >> $(DESTDIR)$(sbindir)/simple-rt
+	echo cd $(libexecdir)/simple-rt >> $(DESTDIR)$(sbindir)/simple-rt
 	echo './simple-rt $$@' >> $(DESTDIR)$(sbindir)/simple-rt
 	chmod +x $(DESTDIR)$(sbindir)/simple-rt
 	echo "SimpleRT installed, make sure $(DESTDIR)$(sbindir)/ is in your PATH-variable."
