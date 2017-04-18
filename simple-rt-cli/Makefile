@@ -21,9 +21,11 @@ exec_prefix = $(prefix)
 sbindir = $(exec_prefix)/sbin
 libexecdir = $(exec_prefix)/libexec
 
+iface_up_sh_path = $(libexecdir)/simple-rt
+
 CC ?= gcc
 LDFLAGS = -lm -lpthread -lresolv
-CFLAGS = -g -std=c11 -D_DEFAULT_SOURCE -DIFACE_UP_SH_PATH=\"$(libexecdir)/simple-rt/iface_up.sh\" -Wall -pedantic -Iinclude
+CFLAGS = -g -std=c11 -D_DEFAULT_SOURCE -DIFACE_UP_SH_PATH=\"$(iface_up_sh_path)/iface_up.sh\" -Wall -pedantic -Iinclude
 
 CFLAGS += `pkg-config --cflags libusb-1.0`
 LDFLAGS += `pkg-config --libs libusb-1.0`
@@ -71,7 +73,7 @@ install: simple-rt
 	mkdir -p $(DESTDIR)$(sbindir)
 	mkdir -p $(DESTDIR)$(libexecdir)/simple-rt
 	cp $< $(DESTDIR)$(sbindir)
-	cp iface_up.sh $(DESTDIR)$(libexecdir)/simple-rt/iface_up.sh
+	cp iface_up.sh $(DESTDIR)$(iface_up_sh_path)/iface_up.sh
 	echo "SimpleRT installed, make sure $(DESTDIR)$(sbindir)/ is in your PATH-variable."
 
 uninstall:
