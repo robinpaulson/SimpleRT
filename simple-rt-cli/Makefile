@@ -16,9 +16,14 @@
 
 TARGET = simple-rt
 
+prefix = /usr/local
+exec_prefix = $(prefix)
+sbindir = $(exec_prefix)/sbin
+libexecdir = $(exec_prefix)/libexec
+
 CC ?= gcc
 LDFLAGS = -lm -lpthread -lresolv
-CFLAGS = -g -std=c11 -D_DEFAULT_SOURCE -Wall -pedantic -Iinclude
+CFLAGS = -g -std=c11 -D_DEFAULT_SOURCE -DIFACE_UP_SH_PATH=$(libexecdir) -Wall -pedantic -Iinclude
 
 CFLAGS += `pkg-config --cflags libusb-1.0`
 LDFLAGS += `pkg-config --libs libusb-1.0`
@@ -62,20 +67,11 @@ clean:
 	-rm -rf $(OBJ)
 	-rm -f $(TARGET)
 
-prefix = /usr/local
-exec_prefix = $(prefix)
-sbindir = $(exec_prefix)/sbin
-libexecdir = $(exec_prefix)/libexec
-
 install: simple-rt
 	mkdir -p $(DESTDIR)$(sbindir)
 	mkdir -p $(DESTDIR)$(libexecdir)/simple-rt
-	cp $< $(DESTDIR)$(libexecdir)/simple-rt
+	cp $< $(DESTDIR)$(sbindir)
 	cp iface_up.sh $(DESTDIR)$(libexecdir)/simple-rt/iface_up.sh
-	echo "#!/bin/bash" > $(DESTDIR)$(sbindir)/simple-rt
-	echo cd $(libexecdir)/simple-rt >> $(DESTDIR)$(sbindir)/simple-rt
-	echo './simple-rt $$@' >> $(DESTDIR)$(sbindir)/simple-rt
-	chmod +x $(DESTDIR)$(sbindir)/simple-rt
 	echo "SimpleRT installed, make sure $(DESTDIR)$(sbindir)/ is in your PATH-variable."
 
 uninstall:
