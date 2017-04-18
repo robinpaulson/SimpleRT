@@ -62,20 +62,22 @@ clean:
 	-rm -rf $(OBJ)
 	-rm -f $(TARGET)
 
-PREFIX = /usr/local/
+prefix = /usr/local
+exec_prefix = $(prefix)
+sbindir = $(exec_prefix)/sbin
+libexecdir = $(exec_prefix)/libexec
 
 install: simple-rt
-	mkdir -p $(DESTDIR)$(PREFIX)/sbin
-	mkdir -p $(DESTDIR)$(PREFIX)/share/simple-rt
-	cp $< $(DESTDIR)$(PREFIX)/share/simple-rt
-	cp iface_up.sh $(DESTDIR)$(PREFIX)/share/simple-rt/iface_up.sh
-	echo "#!/bin/bash" > $(DESTDIR)$(PREFIX)/sbin/simple-rt
-	echo cd $(PREFIX)/share/simple-rt >> $(DESTDIR)$(PREFIX)/sbin/simple-rt
-	echo './simple-rt $$@' >> $(DESTDIR)$(PREFIX)/sbin/simple-rt
-	chmod +x $(DESTDIR)$(PREFIX)/sbin/simple-rt
-	echo "SimpleRT installed, make sure $(DESTDIR)$(PREFIX)/sbin/ is in your PATH-variable."
+	mkdir -p $(DESTDIR)$(sbindir)
+	mkdir -p $(DESTDIR)$(libexecdir)/simple-rt
+	cp $< $(DESTDIR)$(libexecdir)/simple-rt
+	cp iface_up.sh $(DESTDIR)$(libexecdir)/simple-rt/iface_up.sh
+	echo "#!/bin/bash" > $(DESTDIR)$(sbindir)/simple-rt
+	echo cd $(PREFIX)$(libexecdir)/simple-rt >> $(DESTDIR)$(sbindir)/simple-rt
+	echo './simple-rt $$@' >> $(DESTDIR)$(sbindir)/simple-rt
+	chmod +x $(DESTDIR)$(sbindir)/simple-rt
+	echo "SimpleRT installed, make sure $(DESTDIR)$(sbindir)/ is in your PATH-variable."
 
 uninstall:
-	rm -rf $(DESTDIR)$(PREFIX)/share/simple-rt
-	rm -f $(DESTDIR)$(PREFIX)/sbin/simple-rt
-
+	rm -rf $(DESTDIR)$(libexecdir)/simple-rt
+	rm -f $(DESTDIR)$(sbindir)/simple-rt
