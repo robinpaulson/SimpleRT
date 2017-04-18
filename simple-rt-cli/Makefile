@@ -23,7 +23,7 @@ libexecdir = $(exec_prefix)/libexec
 
 CC ?= gcc
 LDFLAGS = -lm -lpthread -lresolv
-CFLAGS = -g -std=c11 -D_DEFAULT_SOURCE -DIFACE_UP_SH_PATH=\"$(libexecdir)/iface_up.sh\" -Wall -pedantic -Iinclude
+CFLAGS = -g -std=c11 -D_DEFAULT_SOURCE -DIFACE_UP_SH_PATH=\"$(libexecdir)/simple-rt/iface_up.sh\" -Wall -pedantic -Iinclude
 
 CFLAGS += `pkg-config --cflags libusb-1.0`
 LDFLAGS += `pkg-config --libs libusb-1.0`
