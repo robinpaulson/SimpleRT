@@ -62,6 +62,11 @@ Create local.properties file in root dir, it should be looks like that:
    - libusb-1.0
    - libresolv (usually already presented in both linux and macos)
    - tuntap kernel module (linux version), utun (macos version, builtin)
+   
+   before build (debian based example):
+   ```
+   sudo apt-get install build-essential pkg-config libusb-1.0-0-dev
+   ```
 
    Makefile is universal for all platforms, just type make.
 
