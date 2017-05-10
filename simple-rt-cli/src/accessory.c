@@ -216,7 +216,7 @@ accessory_id_t gen_new_serial_string(char *str, size_t size)
     accessory_id_t id;
 
     if ((id = acquire_accessory_id()) == 0) {
-        fprintf(stderr, "No free accessory id's left\n");
+        fprintf(stderr, "No free accessory IDs left\n");
         return 0;
     }
 
@@ -249,4 +249,3 @@ void run_usb_probe_thread_detached(struct libusb_device *dev)
     pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
     pthread_create(&th, &attrs, usb_device_thread_proc, dev);
 }
-

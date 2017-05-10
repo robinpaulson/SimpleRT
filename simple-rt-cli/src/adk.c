@@ -201,7 +201,7 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
     }
 
     if (!aoa_version) {
-        fprintf(stderr, "Device is not support accessory!\n");
+        fprintf(stderr, "Device is not a supported accessory!\n");
         ret = 0;
         goto error;
     }
@@ -294,7 +294,7 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
         }
     }
 
-    puts("Accessory was inited successfully!");
+    puts("Accessory was initialized successfully!");
 
 error:
     if (ret < 0) {
@@ -365,4 +365,3 @@ ssize_t write_usb_packet(struct libusb_device_handle *handle, uint8_t ep,
 
     return transferred;
 }
-

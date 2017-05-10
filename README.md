@@ -8,7 +8,7 @@ Development is still in progress, bugs and errors can occur.
 ```
 IMPORTANT!
    If you have any issues with this tool, please, provide some logs:
-   - run util in debug mode (-d), connect you device
+   - run util in debug mode (-d), connect your device
    - run "ip addr show"
    - run "ip route show"
    - store this output into issue ticket on github
@@ -51,7 +51,7 @@ Create local.properties file in root dir, it should be looks like that:
    app/build/outputs/apk/app-debug.apk is your apk.
 
    #### There is already built [apk](https://github.com/vvviperrr/SimpleRT/releases/download/1.1/simple-rt-1.1.apk.zip)
-   
+
    <!---
    ## Now available in [f-droid](https://f-droid.org/repository/browse/?fdfilter=simplert&fdid=com.viper.simplert)
    --->
@@ -60,14 +60,14 @@ Create local.properties file in root dir, it should be looks like that:
 
    Dependencies:
    - libusb-1.0
-   - libresolv (usually already presented in both linux and macos)
+   - libresolv (usually already present in both linux and macos)
    - tuntap kernel module (linux version), utun (macos version, builtin)
 
    Makefile is universal for all platforms, just type make.
 
 Usage:
 
-- run console util as root
+- run console util as root (sudo simple-rt). The iface_up.sh file needs to be present in the application folder.
 - connect your android device
 
 First connection requires some trivial steps:
