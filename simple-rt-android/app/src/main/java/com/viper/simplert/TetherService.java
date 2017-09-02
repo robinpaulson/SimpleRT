@@ -20,13 +20,13 @@ package com.viper.simplert;
 
 import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
-import android.net.LinkAddress;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
 import android.net.ConnectivityManager;
+import android.net.LinkAddress;
 import android.net.LinkProperties;
 import android.net.Network;
 import android.net.VpnService;
@@ -124,12 +124,12 @@ public class TetherService extends VpnService {
         return START_NOT_STICKY;
     }
 
-    private void setAsUndernlyingNetwork(String ipAddr) {
+    private void setAsUndernlyingNetwork(String ipAddress) {
         if (Build.VERSION.SDK_INT >= 22) {
-            Network vpnNetwork = findVpnNetwork(ipAddr);
+            Network vpnNetwork = findVpnNetwork(ipAddress);
             if (vpnNetwork != null) {
                 // so that applications knows that network is available
-                setUnderlyingNetworks(new Network[] {vpnNetwork});
+                setUnderlyingNetworks(new Network[]{vpnNetwork});
             }
         } else {
             Log.w(TAG, "Cannot set underlying network, API version " + Build.VERSION.SDK_INT + " < 22");
@@ -137,14 +137,14 @@ public class TetherService extends VpnService {
     }
 
     @TargetApi(22)
-    private Network findVpnNetwork(String ipAddr) {
+    private Network findVpnNetwork(String ipAddress) {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         Network[] networks = cm.getAllNetworks();
         for (Network network : networks) {
             LinkProperties linkProperties = cm.getLinkProperties(network);
             List<LinkAddress> addresses = linkProperties.getLinkAddresses();
             for (LinkAddress addr : addresses) {
-                if (addr.toString().equals(ipAddr)) {
+                if (addr.toString().equals(ipAddress)) {
                     return network;
                 }
             }
