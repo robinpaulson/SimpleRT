@@ -34,6 +34,7 @@
         <service
             android:name=".TetherService"
             android:permission="android.permission.BIND_VPN_SERVICE"
+
             android:process=":separate">
             <intent-filter>
                 <action android:name="android.net.VpnService"/>

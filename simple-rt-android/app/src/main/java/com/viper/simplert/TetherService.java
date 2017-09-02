@@ -20,13 +20,13 @@ package com.viper.simplert;
 
 import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
+import android.net.LinkAddress;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
 import android.net.ConnectivityManager;
-import android.net.LinkAddress;
 import android.net.LinkProperties;
 import android.net.Network;
 import android.net.VpnService;
@@ -120,12 +120,11 @@ public class TetherService extends VpnService {
         Toast.makeText(this, "SimpleRT Connected!", Toast.LENGTH_SHORT).show();
         Native.start(tunFd.detachFd(), accessoryFd.detachFd());
 
-        setAsUnderlyingNetwork(ipAddr);
+        setAsUndernlyingNetwork(ipAddr);
         return START_NOT_STICKY;
     }
 
-    @TargetApi(22)
-    private void setAsUnderlyingNetwork(String ipAddr) {
+    private void setAsUndernlyingNetwork(String ipAddr) {
         if (Build.VERSION.SDK_INT >= 22) {
             Network vpnNetwork = findVpnNetwork(ipAddr);
             if (vpnNetwork != null) {
