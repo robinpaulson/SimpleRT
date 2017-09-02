@@ -18,16 +18,24 @@
 
 package com.viper.simplert;
 
+import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
+import android.net.ConnectivityManager;
+import android.net.LinkAddress;
+import android.net.LinkProperties;
+import android.net.Network;
 import android.net.VpnService;
+import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.widget.Toast;
+
+import java.util.List;
 
 public class TetherService extends VpnService {
     private static final String TAG = "TetherService";
@@ -112,7 +120,37 @@ public class TetherService extends VpnService {
         Toast.makeText(this, "SimpleRT Connected!", Toast.LENGTH_SHORT).show();
         Native.start(tunFd.detachFd(), accessoryFd.detachFd());
 
+        setAsUnderlyingNetwork(ipAddr);
         return START_NOT_STICKY;
+    }
+
+    @TargetApi(22)
+    private void setAsUnderlyingNetwork(String ipAddr) {
+        if (Build.VERSION.SDK_INT >= 22) {
+            Network vpnNetwork = findVpnNetwork(ipAddr);
+            if (vpnNetwork != null) {
+                // so that applications knows that network is available
+                setUnderlyingNetworks(new Network[] {vpnNetwork});
+            }
+        } else {
+            Log.w(TAG, "Cannot set underlying network, API version " + Build.VERSION.SDK_INT + " < 22");
+        }
+    }
+
+    @TargetApi(22)
+    private Network findVpnNetwork(String ipAddr) {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        Network[] networks = cm.getAllNetworks();
+        for (Network network : networks) {
+            LinkProperties linkProperties = cm.getLinkProperties(network);
+            List<LinkAddress> addresses = linkProperties.getLinkAddresses();
+            for (LinkAddress addr : addresses) {
+                if (addr.toString().equals(ipAddr)) {
+                    return network;
+                }
+            }
+        }
+        return null;
     }
 
     private void showErrorDialog(String err) {
