@@ -3,6 +3,7 @@
           package="com.viper.simplert">
 
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
     <uses-feature android:name="android.hardware.usb.accessory"/>
 
@@ -38,7 +39,6 @@
                 <action android:name="android.net.VpnService"/>
             </intent-filter>
         </service>
-
     </application>
 
 </manifest>
