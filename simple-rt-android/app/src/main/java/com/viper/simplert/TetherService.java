@@ -130,6 +130,7 @@ public class TetherService extends VpnService {
             if (vpnNetwork != null) {
                 // so that applications knows that network is available
                 setUnderlyingNetworks(new Network[]{vpnNetwork});
+                Log.w(TAG, "VPN set as underlying network");
             }
         } else {
             Log.w(TAG, "Cannot set underlying network, API version " + Build.VERSION.SDK_INT + " < 22");
@@ -144,7 +145,7 @@ public class TetherService extends VpnService {
             LinkProperties linkProperties = cm.getLinkProperties(network);
             List<LinkAddress> addresses = linkProperties.getLinkAddresses();
             for (LinkAddress addr : addresses) {
-                if (addr.toString().equals(ipAddress)) {
+                if (addr.toString().equals(ipAddress + "/24")) {
                     return network;
                 }
             }
