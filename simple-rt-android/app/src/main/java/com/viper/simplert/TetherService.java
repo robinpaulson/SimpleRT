@@ -120,13 +120,13 @@ public class TetherService extends VpnService {
         Toast.makeText(this, "SimpleRT Connected!", Toast.LENGTH_SHORT).show();
         Native.start(tunFd.detachFd(), accessoryFd.detachFd());
 
-        setAsUnderlyingNetwork(ipAddr);
+        setAsUnderlyingNetwork(ipAddr + "/" + prefixLength);
         return START_NOT_STICKY;
     }
 
-    private void setAsUnderlyingNetwork(String ipAddress) {
+    private void setAsUnderlyingNetwork(String Address) {
         if (Build.VERSION.SDK_INT >= 22) {
-            Network vpnNetwork = findVpnNetwork(ipAddress);
+            Network vpnNetwork = findVpnNetwork(Address);
             if (vpnNetwork != null) {
                 // so that applications knows that network is available
                 setUnderlyingNetworks(new Network[]{vpnNetwork});
@@ -138,14 +138,14 @@ public class TetherService extends VpnService {
     }
 
     @TargetApi(22)
-    private Network findVpnNetwork(String ipAddress) {
+    private Network findVpnNetwork(String Address) {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         Network[] networks = cm.getAllNetworks();
         for (Network network : networks) {
             LinkProperties linkProperties = cm.getLinkProperties(network);
             List<LinkAddress> addresses = linkProperties.getLinkAddresses();
             for (LinkAddress addr : addresses) {
-                if (addr.toString().equals(ipAddress + "/24")) {
+                if (addr.toString().equals(Address)) {
                     return network;
                 }
             }
