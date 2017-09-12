@@ -58,8 +58,6 @@ public class TetherService extends VpnService {
         }
     };
 
-
-
     @Override
     public int onStartCommand(final Intent intent, int flags, final int startId) {
         Log.w(TAG, "onStartCommand");
