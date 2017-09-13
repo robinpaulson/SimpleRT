@@ -101,6 +101,9 @@ public class TetherService extends VpnService {
 
         Builder builder = new Builder();
         builder.setMtu(1500);
+        if (Build.VERSION.SDK_INT >= 21) {
+            builder.allowBypass();
+        }
         builder.setSession(getString(R.string.app_name));
         builder.addAddress(ipAddr, prefixLength);
         builder.addRoute("0.0.0.0", 0);
