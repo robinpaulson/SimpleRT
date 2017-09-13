@@ -32,6 +32,8 @@ import android.net.Network;
 import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -40,6 +42,7 @@ import java.util.List;
 public class TetherService extends VpnService {
     private static final String TAG = "TetherService";
     private static final String ACTION_USB_PERMISSION = "com.viper.simplert.TetherService.action.USB_PERMISSION";
+    private static final int FOREGROUND_NOTIFICATION_ID = 16;
 
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -121,7 +124,21 @@ public class TetherService extends VpnService {
         Native.start(tunFd.detachFd(), accessoryFd.detachFd());
 
         setAsUnderlyingNetwork(ipAddr + "/" + prefixLength);
+
+        startForeground(FOREGROUND_NOTIFICATION_ID, new NotificationCompat.Builder(this)
+                .setOngoing(true)
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText(getString(R.string.description_service_running))
+                .setSmallIcon(android.R.drawable.ic_secure)
+                .build());
+
         return START_NOT_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        NotificationManagerCompat.from(this).cancel(FOREGROUND_NOTIFICATION_ID);
+        super.onDestroy();
     }
 
     private void setAsUnderlyingNetwork(String Address) {
