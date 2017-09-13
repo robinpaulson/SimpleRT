@@ -18,20 +18,31 @@
 
 package com.viper.simplert;
 
+import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
+import android.net.ConnectivityManager;
+import android.net.LinkAddress;
+import android.net.LinkProperties;
+import android.net.Network;
 import android.net.VpnService;
+import android.os.Build;
 import android.os.ParcelFileDescriptor;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 import android.widget.Toast;
+
+import java.util.List;
 
 public class TetherService extends VpnService {
     private static final String TAG = "TetherService";
     private static final String ACTION_USB_PERMISSION = "com.viper.simplert.TetherService.action.USB_PERMISSION";
+    private static final int FOREGROUND_NOTIFICATION_ID = 16;
 
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -90,6 +101,9 @@ public class TetherService extends VpnService {
 
         Builder builder = new Builder();
         builder.setMtu(1500);
+        if (Build.VERSION.SDK_INT >= 21) {
+            builder.allowBypass();
+        }
         builder.setSession(getString(R.string.app_name));
         builder.addAddress(ipAddr, prefixLength);
         builder.addRoute("0.0.0.0", 0);
@@ -112,7 +126,51 @@ public class TetherService extends VpnService {
         Toast.makeText(this, "SimpleRT Connected!", Toast.LENGTH_SHORT).show();
         Native.start(tunFd.detachFd(), accessoryFd.detachFd());
 
+        setAsUnderlyingNetwork(ipAddr + "/" + prefixLength);
+
+        startForeground(FOREGROUND_NOTIFICATION_ID, new NotificationCompat.Builder(this)
+                .setOngoing(true)
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText(getString(R.string.description_service_running))
+                .setSmallIcon(android.R.drawable.ic_secure)
+                .build());
+
         return START_NOT_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        NotificationManagerCompat.from(this).cancel(FOREGROUND_NOTIFICATION_ID);
+        super.onDestroy();
+    }
+
+    private void setAsUnderlyingNetwork(String Address) {
+        if (Build.VERSION.SDK_INT >= 22) {
+            Network vpnNetwork = findVpnNetwork(Address);
+            if (vpnNetwork != null) {
+                // so that applications knows that network is available
+                setUnderlyingNetworks(new Network[]{vpnNetwork});
+                Log.w(TAG, "VPN set as underlying network");
+            }
+        } else {
+            Log.w(TAG, "Cannot set underlying network, API version " + Build.VERSION.SDK_INT + " < 22");
+        }
+    }
+
+    @TargetApi(22)
+    private Network findVpnNetwork(String Address) {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        Network[] networks = cm.getAllNetworks();
+        for (Network network : networks) {
+            LinkProperties linkProperties = cm.getLinkProperties(network);
+            List<LinkAddress> addresses = linkProperties.getLinkAddresses();
+            for (LinkAddress addr : addresses) {
+                if (addr.toString().equals(Address)) {
+                    return network;
+                }
+            }
+        }
+        return null;
     }
 
     private void showErrorDialog(String err) {
