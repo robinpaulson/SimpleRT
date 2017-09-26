@@ -201,7 +201,7 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
     }
 
     if (!aoa_version) {
-        fprintf(stderr, "Device is not support accessory!\n");
+        fprintf(stderr, "Detected usb device does not support Android Open Accessory protocol.\n");
         ret = 0;
         goto error;
     }
