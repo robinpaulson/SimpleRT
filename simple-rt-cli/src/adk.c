@@ -171,12 +171,22 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
             LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR,
             AOA_GET_PROTOCOL, 0, 0,
             (uint8_t *) &aoa_version, sizeof(aoa_version), 0);
-    if (ret < 0) {
+
+    /* libusb_control_transfer returns a pipe error if the control request is
+     * not supported by the device. This error code is to be expected when
+     * SimpleRT starts up and it should therefore generate a specialized log
+     * message. For example, the Raspberry Pi ethernet adapter is detected as
+     * an usb device and throws a pipe error. */
+    if (ret < 0 && ret != LIBUSB_ERROR_PIPE) {
         goto error;
     }
 
     if (!aoa_version) {
-        fprintf(stderr, "Detected usb device does not support Android Open Accessory protocol.\n");
+        struct libusb_device_descriptor desc;
+        libusb_get_device_descriptor(dev, &desc);
+        printf("Detected usb device with vendor id %x and product id %x does "
+               "not support Android Open Accessory protocol.\n",
+		desc.idVendor, desc.idProduct);
         ret = 0;
         goto error;
     }
