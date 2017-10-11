@@ -50,13 +50,16 @@ Create local.properties file in root dir, it should be looking like that:
    ```
    app/build/outputs/apk/app-debug.apk is your apk.
 
+   A prebuilt apk can also be found under `Downloads` at the [Github releases](https://github.com/iteratec/SimpleRT/releases)
+   tab.
+
 - Desktop part:
 
    Dependencies:
    - libusb-1.0
    - libresolv (usually already present in both linux and macos)
    - tuntap kernel module (linux version), utun (macos version, builtin)
-   
+
    before build (debian based example):
    ```
    sudo apt-get install build-essential pkg-config libusb-1.0-0-dev
