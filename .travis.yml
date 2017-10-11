@@ -15,6 +15,9 @@ matrix:
       on:
         tags: true
   - language: android
+    components:
+    - build-tools-24.0.0
+    - android-24
     before_script:
     - cd simple-rt-android
     - git clone https://github.com/urho3d/android-ndk.git
