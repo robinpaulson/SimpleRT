@@ -257,6 +257,9 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
         { NULL, 0, 0, 0, 0, NULL, 0 },
     };
 
+    printf("Waiting 10 seconds before sending information to device\n");
+    sleep(10);
+
     printf("Sending identification to the device\n");
     for (struct acc_control_params_t *acp = acc_control_params;
             acp->str != NULL; acp++)
