@@ -1,0 +1,34 @@
+matrix:
+  include:
+  - language: C
+    before_install:
+    - sudo apt-get update -qq
+    - sudo apt-get install -qq build-essential pkg-config libusb-1.0-0-dev
+    before_script: cd simple-rt-cli
+    script: make
+    deploy:
+      provider: releases
+      api_key:
+        secure: WIFj8QBhguQb55USl7TFuRIkzbTF8AjWT5KdiE7HnIFbb5ICzCgwfPH7vZKw8tXhmVtsEQpuf3GMea7E7VdBksHDrSPPBoW2HWGq5uk7Lz8B5GYw2gkYBgXtZtatTtG0DS8Ae1nbmY7TbIcj1+/4Fj4oTGkmACUYYYeOo7ThZwJHKkVwkQF5GU8LJ18JHavob3ndWGJeT/aawpja+kgb/820r1ggIAJNJqxqz8fFRde2ed+IXCLLIOinSemRjy3OSqnRzJta7n3v4QHzX5QbuyQIHJl0VS3vpmehgUSiv1pGl5pFLRqVcVPN72jNcCocHl9jKi1DNhCxm2OkJgN0ac6HSLvUiMl1S/BtCbdsEjg52H0rkZNQtDOuBpol/Bf5QAw0zZrW1F99rFVw4PPMu3noxi3VJvP/gHugutJONkBuaatO+LZD9A462rnDf6X2mlUzJxsy8I3ysd+zQ7kJK6mLqmq9lRvAJSwPu0+v3eff5Qs/mv1Hn2fpFZZdHN08MnHGMrCxBs3FGu72ihBDVvrrtAZAm63N/bLxe3GXcEKBowOOGRpvGl5+jFt+E4yQAsZcsEKtE6G9kM0jmcySO+PPic1lzW4sZg7do92/lcRAQtPfFkvIk1ZD/GF01qddOBH0xafiC4lYwfHdFe3GKeH4RBo+sHryQO9xroDAFWU=
+      file: simple-rt
+      skip_cleanup: true
+      on:
+        tags: true
+  - language: android
+    android:
+      components:
+      - build-tools-24.0.0
+      - android-24
+    before_script:
+    - cd simple-rt-android
+    - git clone https://github.com/urho3d/android-ndk.git
+    - printf "ndk.dir=$(pwd)/android-ndk\nsdk.dir=/usr/local/android-sdk\n" > local.properties
+    script: "./gradlew assembleDebug"
+    deploy:
+      provider: releases
+      api_key:
+        secure: WIFj8QBhguQb55USl7TFuRIkzbTF8AjWT5KdiE7HnIFbb5ICzCgwfPH7vZKw8tXhmVtsEQpuf3GMea7E7VdBksHDrSPPBoW2HWGq5uk7Lz8B5GYw2gkYBgXtZtatTtG0DS8Ae1nbmY7TbIcj1+/4Fj4oTGkmACUYYYeOo7ThZwJHKkVwkQF5GU8LJ18JHavob3ndWGJeT/aawpja+kgb/820r1ggIAJNJqxqz8fFRde2ed+IXCLLIOinSemRjy3OSqnRzJta7n3v4QHzX5QbuyQIHJl0VS3vpmehgUSiv1pGl5pFLRqVcVPN72jNcCocHl9jKi1DNhCxm2OkJgN0ac6HSLvUiMl1S/BtCbdsEjg52H0rkZNQtDOuBpol/Bf5QAw0zZrW1F99rFVw4PPMu3noxi3VJvP/gHugutJONkBuaatO+LZD9A462rnDf6X2mlUzJxsy8I3ysd+zQ7kJK6mLqmq9lRvAJSwPu0+v3eff5Qs/mv1Hn2fpFZZdHN08MnHGMrCxBs3FGu72ihBDVvrrtAZAm63N/bLxe3GXcEKBowOOGRpvGl5+jFt+E4yQAsZcsEKtE6G9kM0jmcySO+PPic1lzW4sZg7do92/lcRAQtPfFkvIk1ZD/GF01qddOBH0xafiC4lYwfHdFe3GKeH4RBo+sHryQO9xroDAFWU=
+      file: app/build/outputs/apk/app-debug.apk
+      skip_cleanup: true
+      on:
+        tags: true

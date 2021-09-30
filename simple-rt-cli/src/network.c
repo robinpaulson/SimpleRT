@@ -48,7 +48,9 @@
 #define ACC_ID_FROM_ADDR(addr) \
     ((addr) & 0xff)
 
-#define IFACE_UP_SH_PATH "./iface_up.sh"
+#ifndef IFACE_UP_SH_PATH
+ #define IFACE_UP_SH_PATH "./iface_up.sh"
+#endif
 
 /* tun stuff */
 static int g_tun_fd = 0;

@@ -16,14 +16,21 @@
 
 TARGET = simple-rt
 
+prefix = /usr/local
+exec_prefix = $(prefix)
+sbindir = $(exec_prefix)/sbin
+libexecdir = $(exec_prefix)/libexec
+
+iface_up_sh_path = $(libexecdir)/simple-rt
+
 CC ?= gcc
 LDFLAGS = -lm -lpthread -lresolv
-CFLAGS = -g -std=c11 -D_DEFAULT_SOURCE -Wall -pedantic -Iinclude
+CFLAGS = -g -std=c11 -D_DEFAULT_SOURCE -DIFACE_UP_SH_PATH=\"$(iface_up_sh_path)/iface_up.sh\" -Wall -pedantic -Iinclude
 
 CFLAGS += `pkg-config --cflags libusb-1.0`
 LDFLAGS += `pkg-config --libs libusb-1.0`
 
-.PHONY: default all clean
+.PHONY: default all clean install uninstall
 
 default: $(TARGET)
 all: default
@@ -49,6 +56,12 @@ PLATFORM_SRC = $(SOURCES)/$(PLATFORM)
 OBJECTS = $(patsubst %.c, $(OBJ)/%.o, $(wildcard $(SOURCES)/*.c $(UNIX_SRC)/*.c $(PLATFORM_SRC)/*.c))
 HEADERS = $(wildcard include/*.h)
 
+$(OBJ)/$(SOURCES)/network.o: $(SOURCES)/network.c $(HEADERS)
+	echo Compiling $< setting iface_up_sh_path in config.mk to $(iface_up_sh_path).
+	echo iface_up_sh_path=$(iface_up_sh_path) > config.mk
+	@mkdir -p `dirname $@`
+	$(CC) $(CFLAGS) -c $< -o $@
+
 $(OBJ)/%.o: %.c $(HEADERS)
 	@mkdir -p `dirname $@`
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -61,3 +74,21 @@ $(TARGET): $(OBJECTS)
 clean:
 	-rm -rf $(OBJ)
 	-rm -f $(TARGET)
+	-rm -f config.mk
+	-rm -f config.status
+
+-include config.mk
+
+install: simple-rt
+	echo iface_up_sh_path is $(iface_up_sh_path)
+	mkdir -p $(DESTDIR)$(sbindir)
+	mkdir -p $(DESTDIR)$(iface_up_sh_path)
+	cp $< $(DESTDIR)$(sbindir)
+	cp iface_up.sh $(DESTDIR)$(iface_up_sh_path)/iface_up.sh
+	echo "SimpleRT installed, make sure $(DESTDIR)$(sbindir)/ is in your PATH-variable."
+
+uninstall:
+	rm -f $(DESTDIR)$(sbindir)/simple-rt
+	rm -f $(DESTDIR)$(iface_up_sh_path)/iface_up.sh
+	rmdir --ignore-fail-on-non-empty $(DESTDIR)$(iface_up_sh_path)
+

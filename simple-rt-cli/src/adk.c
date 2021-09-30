@@ -55,8 +55,6 @@
 #define AOA_ACCESSORY_EP_IN         0x81
 #define AOA_ACCESSORY_EP_OUT        0x02
 
-#define AOA_ACCESSORY_INTERFACE     0x00
-
 /* ACC params */
 #define ACC_TIMEOUT 200
 
@@ -80,7 +78,7 @@ static uint16_t get_accessory_endpoints(struct libusb_device *dev)
     }
 
     /* FIXME: get interface by name? */
-    const struct libusb_interface *iface = &config->interface[AOA_ACCESSORY_INTERFACE];
+    const struct libusb_interface *iface = config->interface;
 
     if (!iface) {
         goto end;
@@ -150,7 +148,6 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
         gen_new_serial_str_cb gen_new_serial_str)
 {
     int ret = 0;
-    int is_detached = 0;
     uint16_t aoa_version = 0;
     char serial_str[128] = { 0 };
 
@@ -165,30 +162,8 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
     if (is_accessory_present(dev)) {
         uint16_t endpoints = get_accessory_endpoints(dev);
 
-        /* Claiming first (accessory) interface from usb device */
-        ret = libusb_claim_interface(handle, AOA_ACCESSORY_INTERFACE);
-        if (ret != 0) {
-            fprintf(stderr, "Error claiming interface: %s\n", libusb_strerror(ret));
-            goto error;
-        }
-
         /* create accessory struct */
         return new_accessory(handle, endpoints >> 8, endpoints & 0xff);
-    }
-
-    /* Check whether a kernel driver is attached. If so, we'll need to detach it. */
-    if (libusb_kernel_driver_active(handle, AOA_ACCESSORY_INTERFACE)) {
-        puts("Kernel driver is active!");
-        ret = libusb_detach_kernel_driver(handle, AOA_ACCESSORY_INTERFACE);
-        if (ret == 0) {
-            is_detached = 1;
-            puts("Kernel driver detached!");
-        } else {
-            fprintf(stderr, "Error detaching kernel driver: %s\n", libusb_strerror(ret));
-            goto error;
-        }
-    } else {
-        puts("Kernel driver is not active!");
     }
 
     /* Now asking if device supports Android Open Accessory protocol */
@@ -196,12 +171,22 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
             LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR,
             AOA_GET_PROTOCOL, 0, 0,
             (uint8_t *) &aoa_version, sizeof(aoa_version), 0);
-    if (ret < 0) {
+
+    /* libusb_control_transfer returns a pipe error if the control request is
+     * not supported by the device. This error code is to be expected when
+     * SimpleRT starts up and it should therefore generate a specialized log
+     * message. For example, the Raspberry Pi ethernet adapter is detected as
+     * an usb device and throws a pipe error. */
+    if (ret < 0 && ret != LIBUSB_ERROR_PIPE) {
         goto error;
     }
 
     if (!aoa_version) {
-        fprintf(stderr, "Device is not a supported accessory!\n");
+        struct libusb_device_descriptor desc;
+        libusb_get_device_descriptor(dev, &desc);
+        printf("Detected usb device with vendor id %x and product id %x does "
+               "not support Android Open Accessory protocol.\n",
+    		desc.idVendor, desc.idProduct);
         ret = 0;
         goto error;
     }
@@ -272,6 +257,9 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
         { NULL, 0, 0, 0, 0, NULL, 0 },
     };
 
+    printf("Waiting 10 seconds before sending information to device\n");
+    sleep(10);
+
     printf("Sending identification to the device\n");
     for (struct acc_control_params_t *acp = acc_control_params;
             acp->str != NULL; acp++)
@@ -299,10 +287,6 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
 error:
     if (ret < 0) {
         fprintf(stderr, "Accessory init failed: %s\n", libusb_strerror(ret));
-    }
-
-    if (is_detached) {
-        libusb_attach_kernel_driver(handle, AOA_ACCESSORY_INTERFACE);
     }
 
     if (handle) {

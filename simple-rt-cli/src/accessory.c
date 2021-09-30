@@ -188,7 +188,6 @@ void free_accessory(accessory_t *acc)
 
     if (acc->handle) {
         printf("Closing accessory device\n");
-        libusb_release_interface(acc->handle, 0);
         libusb_close(acc->handle);
     }
 
