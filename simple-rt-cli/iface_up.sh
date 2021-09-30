@@ -42,7 +42,7 @@ function linux_stop {
 }
 
 function osx_start {
-    ifconfig $TUN_DEV $HOST_ADDR 10.1.1.2 netmask 255.255.255.0 up
+    ifconfig $TUN_DEV $HOST_ADDR 10.10.10.2 netmask 255.255.255.0 up
     route add -net $TUNNEL_NET $HOST_ADDR
     sysctl -w net.inet.ip.forwarding=1
     echo "nat on $LOCAL_INTERFACE from $TUNNEL_NET/$TUNNEL_CIDR to any -> ($LOCAL_INTERFACE)" > /tmp/nat_rules_rt
