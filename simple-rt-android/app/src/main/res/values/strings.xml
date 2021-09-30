@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">SimpleRT</string>
     <string name="title_activity_main">MainActivity</string>
-    <string name="accessory_error">Seems like you device doesn\'t support Android Open Accessory protocol!</string>
-    <string name="tun_error">Seems like you device doesn\'t support Android VpnApi! Check out tun.ko app.</string>
+    <string name="accessory_error">Seems like your device doesn\'t support Android Open Accessory protocol!</string>
+    <string name="tun_error">Seems like your device doesn\'t support Android VpnApi! Check out tun.ko app.</string>
     <string name="description_service_running">Service running</string>
 </resources>

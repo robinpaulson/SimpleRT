@@ -50,6 +50,7 @@ Create local.properties file in root dir, it should be looking like that:
    ```
    app/build/outputs/apk/app-debug.apk is your apk.
 
+   ## Now available in [f-droid](https://f-droid.org/repository/browse/?fdfilter=simplert&fdid=com.viper.simplert)
    A prebuilt apk can also be found under `Downloads` at the [Github releases](https://github.com/iteratec/SimpleRT/releases)
    tab.
 
@@ -60,9 +61,9 @@ Create local.properties file in root dir, it should be looking like that:
    - libresolv (usually already present in both linux and macos)
    - tuntap kernel module (linux version), utun (macos version, builtin)
 
-   before build (debian based example):
+   before build (debian-based example):
    ```
-   sudo apt-get install build-essential pkg-config libusb-1.0-0-dev
+   sudo apt install build-essential pkg-config libusb-1.0-0-dev
    ```
 
    Makefile is universal for all platforms, just type "make && make install" to install it in prefix /usr/local and
@@ -73,7 +74,7 @@ Create local.properties file in root dir, it should be looking like that:
 
 Usage:
 
-- run console util as root
+- run console util as root (sudo simple-rt). The iface_up.sh file needs to be present in the application folder.
 - connect your android device
 
 First connection requires some trivial steps:

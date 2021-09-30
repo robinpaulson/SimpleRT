@@ -180,7 +180,7 @@ bool start_network(void)
     }
 
     if (!iface_up(tun_name)) {
-        fprintf(stderr, "Unable set iface %s up\n", tun_name);
+        fprintf(stderr, "Unable to set interface %s up\n", tun_name);
         close(tun_fd);
         return false;
     }
@@ -234,4 +234,3 @@ char *fill_serial_param(char *buf, size_t size, accessory_id_t id)
 
     return buf;
 }
-

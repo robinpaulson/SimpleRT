@@ -186,7 +186,7 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
         libusb_get_device_descriptor(dev, &desc);
         printf("Detected usb device with vendor id %x and product id %x does "
                "not support Android Open Accessory protocol.\n",
-		desc.idVendor, desc.idProduct);
+    		desc.idVendor, desc.idProduct);
         ret = 0;
         goto error;
     }
@@ -282,7 +282,7 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
         }
     }
 
-    puts("Accessory was inited successfully!");
+    puts("Accessory was initialized successfully!");
 
 error:
     if (ret < 0) {
@@ -349,4 +349,3 @@ ssize_t write_usb_packet(struct libusb_device_handle *handle, uint8_t ep,
 
     return transferred;
 }
-
