@@ -23,23 +23,23 @@ FIRST RUN: check out -h option!
 
 ### No root, no adb required!
 
-## Full Linux and macOS support! Windows version is in early researching.
+## Full Linux and macOS support! Windows version is being researched.
 
    Current version features:
-   - Multi-tether. You can connect several android devices into one virtual network!
-   - DNS server specifying (custom or system one).
+   - Multi-tether. It is possible to connect several android devices into one virtual network!
+   - DNS server can be specified (custom or system one).
 
 The SimpleRT utility consists of 2 parts:
 
 - Android part:
 
-   Implemented as standalone service, no gui, no activities. Simplicity!
+   Implemented as a standalone service, no gui, no activities. Simplicity!
 
    Dependencies:
    - Android 4.0 and higher.
 
-   Build system based on gradle + gradle experimental android plugin (supporting ndk). For build you need both sdk & ndk.
-Create local.properties file in root dir, it should be looking like that:
+   Build system based on gradle + gradle experimental android plugin (supporting ndk). To build, both sdk & ndk are required.
+Create local.properties file in root dir, it should look like this:
    ```
    ndk.dir=/home/viper/Android/Sdk/ndk-bundle
    sdk.dir=/home/viper/Android/Sdk
@@ -85,9 +85,9 @@ First connection requires some trivial steps:
 
 ![Third step](screens/connected.png)
 
-Issues: Some apps do not recognize the reverse tethered internet connection due to ConnectivityManager policy. Just leave WiFi or 3g connection active, connection will go through SimpleRT anyway.
+Issues: Some apps do not recognize the reverse tethered internet connection due to ConnectivityManager policy. Leave the WiFi or mobile data connection active, the connection through SimpleRT will be prioritised.
 
-Partially uses code from [linux-adk](https://github.com/gibsson/linux-adk), which is licensed under the GNU GPLv2 or later. This project is under the GNU GPLv3 or later, which is compatible with the license of linux-adk.
+Partially uses code from [linux-adk](https://github.com/gibsson/linux-adk), which is licensed under the GNU GPLv2 or later. This project is under the GNU GPLv3 or later.
 
 ##### License: GNU GPL v3
 
