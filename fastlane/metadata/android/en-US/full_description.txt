@@ -1,0 +1,8 @@
+Provides a way to share a computer's internet connection with an Android device via a USB cable
+
+Full Linux and macOS support. Windows version is being researched.
+
+Current version features:
+
+* Multi-tether. It is possible to connect several android devices into one virtual network
+* DNS server can be specified (custom or system one).
