@@ -6,7 +6,14 @@ Allows you to share your computer's internet connection with your Android device
 Development is still in progress, bugs and errors can occur.
 
 ```
-IMPORTANT!
+FIRST RUN: check out -h option
+   simple-rt -h
+   usage: sudo ./simple-rt [-h] [-i interface] [-n nameserver|"local" ]
+   default params: -i eth0 -n 8.8.8.8
+```
+
+```
+IMPORTANT
    If you have any issues with this tool, please, provide some logs:
    - run util in debug mode (-d), connect your device
    - run "ip addr show"
@@ -14,26 +21,19 @@ IMPORTANT!
    - store this output into issue ticket on github
 ```
 
-```
-FIRST RUN: check out -h option!
-   simple-rt -h
-   usage: sudo ./simple-rt [-h] [-i interface] [-n nameserver|"local" ]
-   default params: -i eth0 -n 8.8.8.8
-```
+### No root or adb required
 
-### No root, no adb required!
-
-## Full Linux and macOS support! Windows version is being researched.
+## Full Linux and macOS support. Windows version is being researched.
 
    Current version features:
-   - Multi-tether. It is possible to connect several android devices into one virtual network!
+   - Multi-tether. It is possible to connect several android devices into one virtual network
    - DNS server can be specified (custom or system one).
 
 The SimpleRT utility consists of 2 parts:
 
 - Android part:
 
-   Implemented as a standalone service, no gui, no activities. Simplicity!
+   Implemented as a standalone service, no gui, no activities
 
    Dependencies:
    - Android 4.0 and higher.
