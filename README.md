@@ -1,5 +1,5 @@
 # SimpleRT
-[![Build and release](https://github.com/robinpaulson/SimpleRT/actions/workflows/android.yml/badge.svg)](https://github.com/robinpaulson/SimpleRT/actions/workflows/android.yml)
+Android component: [![Build and release](https://github.com/robinpaulson/SimpleRT/actions/workflows/android.yml/badge.svg)](https://github.com/robinpaulson/SimpleRT/actions/workflows/android.yml)
 
 Reverse [Tethering](https://en.wikipedia.org/wiki/Tethering) utility for Android.
 
