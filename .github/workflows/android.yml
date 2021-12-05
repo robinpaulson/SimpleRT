@@ -14,7 +14,7 @@ jobs:
     - name: Build with Gradle
       run: |
         ./simple-rt-android/gradlew build
-        cp /home/runner/work/SimpleRT/SimpleRT/app/build/outputs/apk/release/app-release-unsigned.apk /home/runner/work/SimpleRT/SimpleRT/SimpleRT.apk
+        cp /home/runner/work/SimpleRT/SimpleRT/simple-rt-android/app/build/outputs/apk/release/app-release-unsigned.apk /home/runner/work/SimpleRT/SimpleRT/SimpleRT.apk
 
     - name: Upload .apk
       uses: actions/upload-artifact@v1
