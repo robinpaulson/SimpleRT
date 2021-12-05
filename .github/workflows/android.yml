@@ -13,6 +13,7 @@ jobs:
         java-version: 1.8
     - name: Build with Gradle
       run: |
+        ./simple-rt-android/gradlew build
         ls -Rl /home/runner/work/SimpleRT/SimpleRT/|grep apk
         cp /home/runner/work/SimpleRT/SimpleRT/simple-rt-android/app/build/outputs/apk/release/app-release-unsigned.apk /home/runner/work/SimpleRT/SimpleRT/SimpleRT.apk
 
