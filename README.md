@@ -1,4 +1,6 @@
 # SimpleRT
+[![Build and release](https://github.com/robinpaulson/SimpleRT/actions/workflows/android.yml/badge.svg)](https://github.com/robinpaulson/SimpleRT/actions/workflows/android.yml)
+
 Reverse [Tethering](https://en.wikipedia.org/wiki/Tethering) utility for Android.
 
 Provides a way to share a computer's internet connection with an Android device via a USB cable.
