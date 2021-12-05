@@ -13,4 +13,4 @@ jobs:
         java-version: 1.8
     - name: Build with Gradle
       run: |
-        ./simplert-android/gradlew build
+        ./simple-rt-android/gradlew build
