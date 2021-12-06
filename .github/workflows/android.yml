@@ -14,10 +14,3 @@ jobs:
     - name: Build with Gradle
       run: |
         ./simple-rt-android/gradlew build
-        ls -lR /home/runner/work/|grep -i apk
-
-    - name: Upload .apk
-      uses: actions/upload-artifact@v1
-      with:
-        name: SimpleRT
-        path: SimpleRT.apk
