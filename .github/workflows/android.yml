@@ -14,7 +14,7 @@ jobs:
     - name: Build with Gradle
       run: |
         ./simple-rt-android/gradlew build
-        ls -Rl /home/runner/work/SimpleRT/simple-rt-android/app/
+        ls -Rl ./simple-rt-android/app/
 
     - name: Upload apk
       uses: actions/upload-artifact@v2
