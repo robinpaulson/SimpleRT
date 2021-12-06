@@ -16,8 +16,8 @@ jobs:
         ./simple-rt-android/gradlew assembleDebug
         ls -Rl /home/runner/work/SimpleRT|grep apk
 
-- name: Upload apk
-  uses: actions/upload-artifact@v2
-  with:
-    name: debug apk
-    path: app/build/outputs/apk/debug/app-debug.apk
+    - name: Upload apk
+      uses: actions/upload-artifact@v2
+      with:
+        name: debug apk
+        path: app/build/outputs/apk/debug/app-debug.apk
