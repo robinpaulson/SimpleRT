@@ -13,11 +13,11 @@ jobs:
         java-version: 1.8
     - name: Build with Gradle
       run: |
-        ./simple-rt-android/gradlew assembleDebug
+        ./simple-rt-android/gradlew build
         ls -Rl /home/runner/work/SimpleRT|grep apk
 
     - name: Upload apk
       uses: actions/upload-artifact@v2
       with:
         name: debug apk
-        path: app/build/outputs/apk/debug/app-debug.apk
+        path: simple-rt-android/app/build/outputs/apk/debug/app-debug.apk
