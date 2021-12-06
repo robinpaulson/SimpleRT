@@ -1,5 +1,6 @@
 # SimpleRT
 Android component: [![Build and release](https://github.com/robinpaulson/SimpleRT/actions/workflows/android.yml/badge.svg)](https://github.com/robinpaulson/SimpleRT/actions/workflows/android.yml)
+[<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Get_it_on_F-Droid.svg/200px-Get_it_on_F-Droid.svg.png" style="float: left; padding-right: 10px;">](https://f-droid.org/repository/browse/?fdid=com.viper.simplert)
 
 Reverse [Tethering](https://en.wikipedia.org/wiki/Tethering) utility for Android.
 
@@ -69,9 +70,9 @@ Create local.properties file in root dir, it should look like this:
    ```
 
    Makefile is universal for all platforms, just type "make && make install" to install it in prefix /usr/local and
-   check /usr/local/sbin is in your PATH-variable.  
+   check /usr/local/sbin is in your PATH-variable.
    If you want to change the prefix path eg. to install it in /usr instead of /usr/local you can
-   type "make prefix=/usr && make prefix=/usr install".  
+   type "make prefix=/usr && make prefix=/usr install".
    If you don't want to install but just run it from within build directory you can type "make iface_up_sh_path=.".
 
 Usage:
