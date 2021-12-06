@@ -1,5 +1,6 @@
 # SimpleRT
 Android component: [![Build and release](https://github.com/robinpaulson/SimpleRT/actions/workflows/android.yml/badge.svg)](https://github.com/robinpaulson/SimpleRT/actions/workflows/android.yml)
+
 [<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Get_it_on_F-Droid.svg/200px-Get_it_on_F-Droid.svg.png" style="float: left; padding-right: 10px;">](https://f-droid.org/repository/browse/?fdid=com.viper.simplert)
 
 Reverse [Tethering](https://en.wikipedia.org/wiki/Tethering) utility for Android.
