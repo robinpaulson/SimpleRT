@@ -233,7 +233,7 @@ accessory_t *probe_usb_device(struct libusb_device *dev,
             .request_type = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR,
             .bRequest = AOA_SEND_IDENT,
             .wIndex = AOA_STRING_VER_ID,
-            .data = "1.0",
+            .data = "1.1.1",
         },
         {
             .str = "url",
